@@ -20,11 +20,12 @@ echo "$IS_LATEST_RELEASE"
 JSON_PAYLOAD=$(jq -n \
   --arg tag_name "$RELEASE_TAG" \
   --arg name "$RELEASE_TAG" \
+  --arg latest "$IS_LATEST_RELEASE" \
   '{
     "tag_name": $tag_name,
     "name": $name,
     "draft": true,
-    "make_latest": '"$IS_LATEST_RELEASE"'
+    "make_latest": $latest
   }')
 
 CURL_RESPONSE=$(curl -L \
