@@ -9,10 +9,13 @@ set -E          # needs to be set if we want the ERR trap
 set -o pipefail # prevents errors in a pipeline from being masked
 
 RELEASE_TAG=$1
+IS_LATEST_RELEASE=$2
 
 REPOSITORY=${REPOSITORY:-MichalKalke/serverless-manager}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
+
+echo "$IS_LATEST_RELEASE"
 
 JSON_PAYLOAD=$(jq -n \
   --arg tag_name "$RELEASE_TAG" \
@@ -20,7 +23,8 @@ JSON_PAYLOAD=$(jq -n \
   '{
     "tag_name": $tag_name,
     "name": $name,
-    "draft": true
+    "draft": true,
+    "make_latest": '"$IS_LATEST_RELEASE"'
   }')
 
 CURL_RESPONSE=$(curl -L \
