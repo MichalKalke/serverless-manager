@@ -11,9 +11,11 @@ set -o pipefail # prevents errors in a pipeline from being masked
 RELEASE_ID=$1
 IS_LATEST_RELEASE=$2
 
-REPOSITORY=${REPOSITORY:-kyma-project/serverless-manager}
+REPOSITORY=${REPOSITORY:-MichalKalke/serverless-manager}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
+
+echo "$IS_LATEST_RELEASE"
 
 CURL_RESPONSE=$(curl -L \
   -X POST \
@@ -21,4 +23,4 @@ CURL_RESPONSE=$(curl -L \
   -H "${GITHUB_AUTH_HEADER}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   ${GITHUB_URL}/releases/${RELEASE_ID} \
-  -d '{"draft": false, "make_latest": '$IS_LATEST_RELEASE'}')
+  -d '{"draft": false, "make_latest": '"$IS_LATEST_RELEASE"'}')

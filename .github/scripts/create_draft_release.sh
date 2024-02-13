@@ -10,19 +10,16 @@ set -o pipefail # prevents errors in a pipeline from being masked
 
 RELEASE_TAG=$1
 
-REPOSITORY=${REPOSITORY:-kyma-project/serverless-manager}
+REPOSITORY=${REPOSITORY:-MichalKalke/serverless-manager}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
-CHANGELOG_FILE=$(cat CHANGELOG.md)
 
 JSON_PAYLOAD=$(jq -n \
   --arg tag_name "$RELEASE_TAG" \
   --arg name "$RELEASE_TAG" \
-  --arg body "$CHANGELOG_FILE" \
   '{
     "tag_name": $tag_name,
     "name": $name,
-    "body": $body,
     "draft": true
   }')
 

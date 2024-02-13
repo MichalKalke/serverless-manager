@@ -41,7 +41,7 @@ echo "Fetching releases"
 CURL_RESPONSE=$(curl -w "%{http_code}" -sL \
                 -H "Accept: application/vnd.github+json" \
                 -H "Authorization: Bearer $GITHUB_TOKEN"\
-                https://api.github.com/repos/kyma-project/serverless-manager/releases)
+                https://api.github.com/repos/MichalKalke/serverless-manager/releases)
 JSON_RESPONSE=$(sed '$ d' <<< "${CURL_RESPONSE}")
 HTTP_CODE=$(tail -n1 <<< "${CURL_RESPONSE}")
 if [[ "${HTTP_CODE}" != "200" ]]; then
@@ -60,7 +60,7 @@ then
 fi
 
 echo "Updating github release with assets"
-UPLOAD_URL="https://uploads.github.com/repos/kyma-project/serverless/releases/${RELEASE_ID}/assets"
+UPLOAD_URL="https://uploads.github.com/repos/MichalKalke/serverless-manager/releases/${RELEASE_ID}/assets"
 
 uploadFile "serverless-operator.yaml" "${UPLOAD_URL}?name=serverless-operator.yaml"
 uploadFile "config/samples/default-serverless-cr.yaml" "${UPLOAD_URL}?name=default-serverless-cr.yaml"
