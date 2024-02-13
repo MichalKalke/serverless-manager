@@ -15,8 +15,6 @@ REPOSITORY=${REPOSITORY:-MichalKalke/serverless-manager}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
 
-echo "$IS_LATEST_RELEASE"
-
 JSON_PAYLOAD=$(jq -n \
   --arg tag_name "$RELEASE_TAG" \
   --arg name "$RELEASE_TAG" \
