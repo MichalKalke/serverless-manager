@@ -15,7 +15,6 @@ on:
 jobs:
   create-draft:
     name: Create draft release
-    needs: upgrade-images
     runs-on: ubuntu-latest
 
     steps:
