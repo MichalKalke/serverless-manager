@@ -13,55 +13,6 @@ on:
         default: false
 
 jobs:
-  verify-head-status:
-    name: Verify HEAD
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Verify prow post jobs
-        run: ./.github/scripts/verify-serverless-jobs-status.sh ${{ github.ref_name }}
-
-      - name: Verify github actions
-        run: ./.github/scripts/verify-actions-status.sh ${{ github.ref_name }}
-
-  upgrade-images:
-    name: Upgrade main images
-    needs: verify-head-status
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          fetch-depth: 0
-
-      - name: Bump values.yaml
-        run: |
-          make -C components/operator/hack/ci replace-function-chart-images
-        env:
-          IMG_DIRECTORY: "prod"
-          IMG_VERSION: ${{ github.event.inputs.name }}
-
-      - name: Bump sec-scanners-config.yaml based on values.yaml
-        run: ./.github/scripts/upgrade-sec-scanners-config.sh
-        env:
-          IMG_VERSION: ${{ github.event.inputs.name }}
-      
-      - name: Commit&Push
-        run: |
-          git config --local user.email "team-otters@sap.com"
-          git config --local user.name "ottersbot"
-
-          git add .
-          git commit --allow-empty -m "upgrade dependencies"
-          git push origin ${{ github.ref_name }}
-
   create-draft:
     name: Create draft release
     needs: upgrade-images
@@ -85,7 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELEASE_ID=$(./.github/scripts/create_draft_release.sh ${{ github.event.inputs.name }} ${{ github.event.inputs.latest_release }})
+          RELEASE_ID=$(./.github/scripts/create_draft_release.sh ${{ github.event.inputs.name }})
           echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
 
       - name: Create lightweight tag
@@ -122,4 +73,4 @@ jobs:
       - name: Publish release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/scripts/publish_release.sh ${{ needs.create-draft.outputs.release_id }}
+        run: ./.github/scripts/publish_release.sh ${{ needs.create-draft.outputs.release_id }} ${{ github.event.inputs.latest_release }}
