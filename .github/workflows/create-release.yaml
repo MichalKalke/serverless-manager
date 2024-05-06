@@ -26,45 +26,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify prow post jobs
-        run: ./.github/scripts/verify-serverless-jobs-status.sh ${{ github.ref_name }}
-
       - name: Verify github actions
         run: ./.github/scripts/verify-actions-status.sh ${{ github.ref_name }}
-
-  upgrade-images:
-    name: Upgrade main images
-    needs: verify-head-status
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          fetch-depth: 0
-
-      - name: Bump values.yaml
-        run: |
-          ./hack/replace_serverless_chart_images.sh all .
-        env:
-          IMG_DIRECTORY: "prod"
-          IMG_VERSION: ${{ github.event.inputs.name }}
-          PROJECT_ROOT: "."
-
-      - name: Bump sec-scanners-config.yaml based on values.yaml
-        run: ./.github/scripts/upgrade-sec-scanners-config.sh
-        env:
-          IMG_VERSION: ${{ github.event.inputs.name }}
-      
-      - name: Commit&Push
-        run: |
-          git config --local user.email "team-otters@sap.com"
-          git config --local user.name "ottersbot"
-
-          git add .
-          git commit --allow-empty -m "upgrade dependencies"
-          git push origin ${{ github.ref_name }}
 
   create-draft:
     name: Create draft release
