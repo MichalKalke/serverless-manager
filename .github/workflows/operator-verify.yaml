@@ -2,7 +2,7 @@ name: Operator verify
 
 on:
   push:
-    branches: [ "main", "release-*" ]
+    branches: [ "main", "release-*", "magisterka" ]
   pull_request:
     paths-ignore:
       - 'docs/**'
