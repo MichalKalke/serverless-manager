@@ -37,27 +37,27 @@ IMG=${IMG} make -C components/operator/ render-manifest
 echo "Generated serverless-operator.yaml:"
 cat serverless-operator.yaml
 
-#echo "Fetching releases"
-#CURL_RESPONSE=$(curl -w "%{http_code}" -sL \
-#                -H "Accept: application/vnd.github+json" \
-#                -H "Authorization: Bearer $GITHUB_TOKEN" \
-#                https://api.github.com/repos/MichalKalke/serverless-manager/releases)
-#JSON_RESPONSE=$(sed '$ d' <<< "${CURL_RESPONSE}")
-#HTTP_CODE=$(tail -n1 <<< "${CURL_RESPONSE}")
-#if [[ "${HTTP_CODE}" != "200" ]]; then
-#  echo "${CURL_RESPONSE}"
-#  exit 1
-#fi
-#
-#echo "Finding release id for: ${PULL_BASE_REF}"
-#RELEASE_ID=$(jq <<< ${JSON_RESPONSE} --arg tag "${PULL_BASE_REF}" '.[] | select(.tag_name == $ARGS.named.tag) | .id')
-#
-#echo "Got '${RELEASE_ID}' release id"
-#if [ -z "${RELEASE_ID}" ]
-#then
-#  echo "No release with tag = ${PULL_BASE_REF}"
-#  exit 1
-#fi
+echo "Fetching releases"
+CURL_RESPONSE=$(curl -w "%{http_code}" -sL \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                https://api.github.com/repos/MichalKalke/serverless-manager/releases)
+JSON_RESPONSE=$(sed '$ d' <<< "${CURL_RESPONSE}")
+HTTP_CODE=$(tail -n1 <<< "${CURL_RESPONSE}")
+if [[ "${HTTP_CODE}" != "200" ]]; then
+  echo "${CURL_RESPONSE}"
+  exit 1
+fi
+
+echo "Finding release id for: ${PULL_BASE_REF}"
+RELEASE_ID=$(jq <<< ${JSON_RESPONSE} --arg tag "${PULL_BASE_REF}" '.[] | select(.tag_name == $ARGS.named.tag) | .id')
+
+echo "Got '${RELEASE_ID}' release id"
+if [ -z "${RELEASE_ID}" ]
+then
+  echo "No release with tag = ${PULL_BASE_REF}"
+  exit 1
+fi
 
 echo "Updating github release with assets"
 UPLOAD_URL="https://uploads.github.com/repos/MichalKalke/serverless-manager/releases/${RELEASE_ID}/assets"
