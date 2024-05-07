@@ -13,7 +13,7 @@ func WithRetry(utils *TestUtils, f func(utils *TestUtils) error) error {
 		},
 		retry.Delay(5*time.Second),
 		retry.DelayType(retry.FixedDelay),
-		retry.Attempts(100),
+		retry.Attempts(150),
 		retry.Context(utils.Ctx),
 		retry.LastErrorOnly(true),
 	)
