@@ -26,14 +26,18 @@ func Verify(utils *utils.TestUtils) error {
 		Namespace: utils.Namespace,
 	}
 
+	utils.Logger.Infof("Getting client '%s'", utils.ServerlessName)
+
 	if err := utils.Client.Get(utils.Ctx, objectKey, &serverless); err != nil {
 		return err
 	}
 
+	utils.Logger.Infof("Verify state'%s'", utils.ServerlessName)
 	if err := verifyState(utils, &serverless); err != nil {
 		return err
 	}
 
+	utils.Logger.Infof("Verify status'%s'", utils.ServerlessName)
 	if err := verifyStatus(&serverless); err != nil {
 		return err
 	}
@@ -103,6 +107,8 @@ func isSpecValueReflectedInStatus(specValue string, statusValue string) error {
 }
 
 func verifyState(utils *utils.TestUtils, serverless *v1alpha1.Serverless) error {
+
+	utils.Logger.Infof("Actual state '%s'", serverless.Status.State)
 	if serverless.Status.State != v1alpha1.StateReady {
 		return fmt.Errorf("serverless '%s' in '%s' state", utils.ServerlessName, serverless.Status.State)
 	}

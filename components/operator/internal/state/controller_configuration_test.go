@@ -2,8 +2,8 @@ package state
 
 import (
 	"context"
-	"testing"
 	"fmt"
+	"testing"
 
 	"github.com/kyma-project/serverless/components/operator/api/v1alpha1"
 	"github.com/kyma-project/serverless/components/operator/internal/chart"
@@ -240,8 +240,8 @@ func Test_sFnControllerConfiguration(t *testing.T) {
 			warningBuilder: warning.NewBuilder(),
 			instance: v1alpha1.Serverless{
 				Spec: v1alpha1.ServerlessSpec{
-					FunctionRequestBodyLimitMb:       requestBodyLimitMbTest,
-					FunctionTimeoutSec:               timeoutSecTest,
+					FunctionRequestBodyLimitMb: requestBodyLimitMbTest,
+					FunctionTimeoutSec:         timeoutSecTest,
 				},
 			},
 		}
@@ -249,8 +249,6 @@ func Test_sFnControllerConfiguration(t *testing.T) {
 		require.Equal(t, fmt.Sprintf("Warning: %s; %s", functionTimeoutDepreciationMessage, functionRequestBodyLimitDepreciationMessage), s.warningBuilder.Build())
 	})
 }
-
-
 
 func fixTestNode(name string) *corev1.Node {
 	return &corev1.Node{
