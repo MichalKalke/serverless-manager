@@ -21,6 +21,7 @@ uploadFile() {
                   -H "Authorization: token $GITHUB_TOKEN" \
                   -H "Content-Type: text/yaml" \
                    $ghAsset)
+  echo "$response"
   if [[ "$response" != "201" ]]; then
     echo "Unable to upload the asset ($filePath): "
     echo "HTTP Status: $response"
