@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	slowBuildPreset   = "slow"
-	slowRuntimePreset = "XS"
-	fastBuildPreset   = "fast"
-	fastRuntimePreset = "L"
-	functionTimeoutDepreciationMessage = "spec.functionTimeoutSec is unused and will be removed. Remove it from your Serverless CR."
+	slowBuildPreset                             = "slow"
+	slowRuntimePreset                           = "XS"
+	fastBuildPreset                             = "fast"
+	fastRuntimePreset                           = "L"
+	functionTimeoutDepreciationMessage          = "spec.functionTimeoutSec is unused and will be removed. Remove it from your Serverless CR."
 	functionRequestBodyLimitDepreciationMessage = "spec.functionRequestBodyLimitMb is unused and will be removed. Remove it from your Serverless CR."
 )
 
