@@ -28,6 +28,7 @@ jobs:
 
   create-draft:
     name: Create draft release
+    needs: verify-head-status
     runs-on: ubuntu-latest
 
     steps:
