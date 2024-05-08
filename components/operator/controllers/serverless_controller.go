@@ -44,6 +44,7 @@ type serverlessReconciler struct {
 func NewServerlessReconciler(client client.Client, config *rest.Config, recorder record.EventRecorder, log *zap.SugaredLogger, chartPath string) *serverlessReconciler {
 	cache := chart.NewSecretManifestCache(client)
 
+	log.Info("tutaj jestem")
 	return &serverlessReconciler{
 		initStateMachine: func(log *zap.SugaredLogger) state.StateReconciler {
 			return state.NewMachine(client, config, recorder, log, cache, chartPath)
