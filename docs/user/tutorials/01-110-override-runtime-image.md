@@ -6,13 +6,13 @@ This tutorial shows how to build a custom runtime image and override the Functio
 
 Before you start, make sure you have these tools installed:
 
-- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) on a cluster
+- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) in a cluster
 
 ## Steps
 
 Follow these steps:
 
-1. Follow [this example](https://github.com/kyma-project/examples/tree/main/custom-serverless-runtime-image) to build the Python's custom runtime image.
+1. Follow [this example](https://github.com/kyma-project/serverless/tree/main/examples/custom-serverless-runtime-image) to build the Python's custom runtime image.
 
 <!-- tabs:start -->
 
@@ -31,7 +31,7 @@ Follow these steps:
     ```bash
     mkdir {FOLDER_NAME}
     cd {FOLDER_NAME}
-    kyma init function --name $NAME --namespace $NAMESPACE --runtime-image-override $RUNTIME_IMAGE --runtime python39
+    kyma init function --name $NAME --namespace $NAMESPACE --runtime-image-override $RUNTIME_IMAGE --runtime python312
     ```
 
 4. Deploy your Function:
@@ -66,7 +66,7 @@ Follow these steps:
      name: $NAME
      namespace: $NAMESPACE
    spec:
-     runtime: python39
+     runtime: python312
      runtimeImageOverride: $RUNTIME_IMAGE
      source:
        inline:

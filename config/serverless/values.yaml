@@ -69,29 +69,31 @@ global:
     domainName:
   containerRegistry:
     path: europe-docker.pkg.dev/kyma-project
+  tpiContainerRegistry:
+    path: europe-docker.pkg.dev/kyma-project
   images:
     function_controller:
       name: "function-controller"
-      version: "main"
-      directory: "prod"
-    function_webhook:
-      name: "function-webhook"
       version: "main"
       directory: "prod"
     function_build_init:
       name: "function-build-init"
       version: "main"
       directory: "prod"
-    function_runtime_nodejs16:
-      name: "function-runtime-nodejs16"
-      version: "main"
-      directory: "prod"
     function_runtime_nodejs18:
       name: "function-runtime-nodejs18"
       version: "main"
       directory: "prod"
+    function_runtime_nodejs20:
+      name: "function-runtime-nodejs20"
+      version: "main"
+      directory: "prod"
     function_runtime_python39:
       name: "function-runtime-python39"
+      version: "main"
+      directory: "prod"
+    function_runtime_python312:
+      name: "function-runtime-python312"
       version: "main"
       directory: "prod"
     kaniko_executor:
@@ -178,7 +180,6 @@ containers:
         configMapRequeueDuration: 5m
         secretRequeueDuration: 5m
         serviceAccountRequeueDuration: 5m
-        imageRegistryExternalDockerConfigSecretName: '{{ template "fullname" . }}-registry-config'
         imageRegistryDefaultDockerConfigSecretName: '{{ template "fullname" . }}-registry-config-default'
         packageRegistryConfigSecretName: '{{ template "fullname" . }}-package-registry-config'
         imagePullAccountName: '{{ template "fullname" . }}-function'

@@ -18,7 +18,7 @@ kind: Function
 metadata:
   name: test-function-nodejs
 spec:
-  runtime: nodejs18
+  runtime: nodejs20
   source:
     inline:
       dependencies: |
@@ -46,9 +46,9 @@ cat <<EOF | kubectl apply -f -
 apiVersion: serverless.kyma-project.io/v1alpha2
 kind: Function
 metadata:
-  name: test-function-python39
+  name: test-function-python312
 spec:
-  runtime: python39
+  runtime: python312
   source:
     inline:
       dependencies: |

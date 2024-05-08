@@ -28,19 +28,20 @@ func TestGetRuntimeConfig(t *testing.T) {
 					{Name: "PYTHONUNBUFFERED", Value: "TRUE"}},
 			},
 		},
-		"nodej16": {
-			name:    "nodejs16 config",
-			runtime: serverlessv1alpha2.NodeJs16,
+		"python312": {
+			name:    "python312",
+			runtime: serverlessv1alpha2.Python312,
 			want: runtime.Config{
-				Runtime:                 serverlessv1alpha2.NodeJs16,
-				DependencyFile:          "package.json",
-				FunctionFile:            "handler.js",
-				DockerfileConfigMapName: "dockerfile-nodejs16",
-				RuntimeEnvs: []corev1.EnvVar{
-					{Name: "FUNC_RUNTIME", Value: "nodejs16"}},
+				Runtime:                 serverlessv1alpha2.Python312,
+				DependencyFile:          "requirements.txt",
+				FunctionFile:            "handler.py",
+				DockerfileConfigMapName: "dockerfile-python312",
+				RuntimeEnvs: []corev1.EnvVar{{Name: "PYTHONPATH", Value: "$(KUBELESS_INSTALL_VOLUME)/lib.python3.12/site-packages:$(KUBELESS_INSTALL_VOLUME)"},
+					{Name: "FUNC_RUNTIME", Value: "python312"},
+					{Name: "PYTHONUNBUFFERED", Value: "TRUE"}},
 			},
 		},
-		"nodej18": {
+		"nodejs18": {
 			name:    "nodejs18 config",
 			runtime: serverlessv1alpha2.NodeJs18,
 			want: runtime.Config{
@@ -50,6 +51,18 @@ func TestGetRuntimeConfig(t *testing.T) {
 				DockerfileConfigMapName: "dockerfile-nodejs18",
 				RuntimeEnvs: []corev1.EnvVar{
 					{Name: "FUNC_RUNTIME", Value: "nodejs18"}},
+			},
+		},
+		"nodejs20": {
+			name:    "nodejs20 config",
+			runtime: serverlessv1alpha2.NodeJs20,
+			want: runtime.Config{
+				Runtime:                 serverlessv1alpha2.NodeJs20,
+				DependencyFile:          "package.json",
+				FunctionFile:            "handler.js",
+				DockerfileConfigMapName: "dockerfile-nodejs20",
+				RuntimeEnvs: []corev1.EnvVar{
+					{Name: "FUNC_RUNTIME", Value: "nodejs20"}},
 			},
 		}} {
 		t.Run(testName, func(t *testing.T) {

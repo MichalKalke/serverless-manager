@@ -8,16 +8,16 @@ Every runtime provides its own unique environment configuration which can be rea
 
 ### Common Environments
 
-| Environment | Default | Description                                                                                                                                                           |
-|---------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **FUNC_HANDLER** | `main` | The name of the exported Function inside the `MOD_NAME` file.                                                                                                         |
+| Environment | Default | Description                                                                                                                                                                    |
+|---------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **FUNC_HANDLER** | `main` | The name of the exported Function inside the `MOD_NAME` file.                                                                                                                  |
 | **MOD_NAME** | `handler` | The name of the main exported file. It must have an extension of `.py` for the Python runtimes and `.js` for the Node.js ones. The extension must be added on the server side. |
-| **FUNC_PORT** | `8080` | The right port a server listens to.                                                                                                                                  |
-| **SERVICE_NAMESPACE** | None | The namespace where the right Function exists on a cluster.                                                                                                           |
-| **KUBELESS_INSTALL_VOLUME** | `/kubeless` | Full path to volume mount with users source code.                                                                                                                     |
-| **FUNC_RUNTIME** | None | The name of the actual runtime. Possible values: `nodejs16` - deprecated, `nodejs18`, `python39`.                                                                               |
-| **TRACE_COLLECTOR_ENDPOINT** | None | Full address of OpenTelemetry Trace Collector is exported if the trace collector's endpoint is present.                                                                  |
-| **PUBLISHER_PROXY_ADDRESS** | `http://eventing-publisher-proxy.kyma-system.svc&nbsp;.cluster.local/publish` | Full address of the Publisher Proxy service.                                                                                                                          |
+| **FUNC_PORT** | `8080` | The right port a server listens to.                                                                                                                                            |
+| **SERVICE_NAMESPACE** | None | The namespace where the right Function exists in a cluster.                                                                                                                    |
+| **KUBELESS_INSTALL_VOLUME** | `/kubeless` | Full path to volume mount with users source code.                                                                                                                              |
+| **FUNC_RUNTIME** | None | The name of the actual runtime. Possible values: `nodejs18` - deprecated, `nodejs20`, `python39` - deprecated, and `python312`.                                               |
+| **TRACE_COLLECTOR_ENDPOINT** | None | Full address of OpenTelemetry Trace Collector is exported if the trace collector's endpoint is present.                                                                        |
+| **PUBLISHER_PROXY_ADDRESS** | `http://eventing-publisher-proxy.kyma-system.svc&nbsp;.cluster.local/publish` | Full address of the Publisher Proxy service.                                                                                                                                   |
 
 ### Specific Environments
 
@@ -51,7 +51,7 @@ spec:
         configMapKeyRef:
           key: my-var
           name: my-vars-cm
-  runtime: nodejs18
+  runtime: nodejs20
   source:
     inline:
       source: |
@@ -72,7 +72,6 @@ To configure the Function with the Node.js runtime, override the default values 
 | **REQ_MB_LIMIT**                 | Specifies the payload body size limit in megabytes.                                                                          | Number  | `1`           |
 | **KYMA_INTERNAL_LOGGER_ENABLED** | Enables the default HTTP request logger which uses the standard Apache combined log output. To enable it, set its value to `true`.  | Boolean | `false`       |
 
-
 See the example of a Function with these environment variables set:
 
 ```yaml
@@ -87,7 +86,7 @@ spec:
       value: '2'
     - name: REQ_MB_LIMIT
       value: '10'
-  runtime: nodejs18
+  runtime: nodejs20
   source:
     inline:
       source: |
@@ -104,7 +103,7 @@ To configure a Function with the Python runtime, override the default values of 
 
 | Environment variable             |            Description                                                                                                     | Unit    | Default value   |
 | -------------------------------- |---------------------------------------------------------------------------------------------------------------------------- | ------- | --------------- |
- **FUNC_MEMFILE_MAX**|for the HTTP request body in bytes.                                                            | Number  | `100*1024*1024` | <!-- https://bottlepy.org/docs/dev/api.html#bottle.BaseRequest.MEMFILE_MAX --> |
+|**FUNC_MEMFILE_MAX**|for the HTTP request body in bytes.                                                            | Number  | `100*1024*1024` | <!-- https://bottlepy.org/docs/dev/api.html#bottle.BaseRequest.MEMFILE_MAX --> |
 | **CHERRYPY_NUMTHREADS**          | Specifies the number of requests that can be handled in parallel                                                                           | Number  | `50`              |
 | **KYMA_INTERNAL_LOGGER_ENABLED** | Enables the default HTTP request logger which uses the standard Apache combined log output. To enable it, set its value to `true`. | Boolean | `false`         |
 
@@ -120,7 +119,7 @@ spec:
   env:
     - name: FUNC_MEMFILE_MAX
       value: '1048576' #1MiB
-  runtime: nodejs18
+  runtime: nodejs20
   source:
     inline:
       source: |

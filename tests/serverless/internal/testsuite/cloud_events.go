@@ -36,8 +36,9 @@ func FunctionCloudEventsTest(restConfig *rest.Config, cfg internal.Config, logf 
 	}
 
 	python39Logger := logf.WithField(runtimeKey, "python39")
-	nodejs16Logger := logf.WithField(runtimeKey, "nodejs16")
+	python312Logger := logf.WithField(runtimeKey, "python312")
 	nodejs18Logger := logf.WithField(runtimeKey, "nodejs18")
+	nodejs20Logger := logf.WithField(runtimeKey, "nodejs20")
 
 	genericContainer := utils.Container{
 		DynamicCli:  dynamicCli,
@@ -47,10 +48,11 @@ func FunctionCloudEventsTest(restConfig *rest.Config, cfg internal.Config, logf 
 		Log:         logf,
 	}
 
-	publisherProxyMock := function.NewFunction("eventing-publisher-proxy", "kyma-system", cfg.KubectlProxyEnabled, genericContainer.WithLogger(python39Logger))
+	publisherProxyMock := function.NewFunction("eventing-publisher-proxy", "kyma-system", cfg.KubectlProxyEnabled, genericContainer.WithLogger(python312Logger))
 	python39Fn := function.NewFunction("python39", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(python39Logger))
-	nodejs16Fn := function.NewFunction("nodejs16", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(nodejs16Logger))
+	python312Fn := function.NewFunction("python312", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(python312Logger))
 	nodejs18Fn := function.NewFunction("nodejs18", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(nodejs18Logger))
+	nodejs20Fn := function.NewFunction("nodejs20", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(nodejs20Logger))
 
 	logf.Infof("Testing function in namespace: %s", cfg.Namespace)
 
@@ -64,17 +66,23 @@ func FunctionCloudEventsTest(restConfig *rest.Config, cfg internal.Config, logf 
 				assertion.CloudEventReceiveCheck(python39Logger, "Python39 cloud event binary check", cloudevents.EncodingBinary, python39Fn.FunctionURL),
 				assertion.CloudEventSendCheck(python39Logger, "Python39 cloud event sent check", string(serverlessv1alpha2.Python39), python39Fn.FunctionURL, publisherProxyMock.FunctionURL),
 			),
-			executor.NewSerialTestRunner(nodejs16Logger, "NodeJS16 test",
-				function.CreateFunction(nodejs16Logger, nodejs16Fn, "Create NodeJS16 Function", runtimes.NodeJSFunctionWithCloudEvent(serverlessv1alpha2.NodeJs16)),
-				assertion.CloudEventReceiveCheck(nodejs16Logger, "NodeJS16 cloud event structured check", cloudevents.EncodingStructured, nodejs16Fn.FunctionURL),
-				assertion.CloudEventReceiveCheck(nodejs16Logger, "NodeJS16 cloud event binary check", cloudevents.EncodingBinary, nodejs16Fn.FunctionURL),
-				assertion.CloudEventSendCheck(nodejs16Logger, "NodeJS16 cloud event sent check", string(serverlessv1alpha2.NodeJs16), nodejs16Fn.FunctionURL, publisherProxyMock.FunctionURL),
+			executor.NewSerialTestRunner(python312Logger, "Python312 test",
+				function.CreateFunction(python312Logger, python312Fn, "Create Python312 Function", runtimes.PythonCloudEvent(serverlessv1alpha2.Python312)),
+				assertion.CloudEventReceiveCheck(python312Logger, "Python312 cloud event structured check", cloudevents.EncodingStructured, python312Fn.FunctionURL),
+				assertion.CloudEventReceiveCheck(python312Logger, "Python312 cloud event binary check", cloudevents.EncodingBinary, python312Fn.FunctionURL),
+				assertion.CloudEventSendCheck(python312Logger, "Python312 cloud event sent check", string(serverlessv1alpha2.Python312), python312Fn.FunctionURL, publisherProxyMock.FunctionURL),
 			),
 			executor.NewSerialTestRunner(nodejs18Logger, "NodeJS18 test",
 				function.CreateFunction(nodejs18Logger, nodejs18Fn, "Create NodeJS18 Function", runtimes.NodeJSFunctionWithCloudEvent(serverlessv1alpha2.NodeJs18)),
 				assertion.CloudEventReceiveCheck(nodejs18Logger, "NodeJS18 cloud event structured check", cloudevents.EncodingStructured, nodejs18Fn.FunctionURL),
 				assertion.CloudEventReceiveCheck(nodejs18Logger, "NodeJS18 cloud event binary check", cloudevents.EncodingBinary, nodejs18Fn.FunctionURL),
 				assertion.CloudEventSendCheck(nodejs18Logger, "NodeJS18 cloud event sent check", string(serverlessv1alpha2.NodeJs18), nodejs18Fn.FunctionURL, publisherProxyMock.FunctionURL),
+			),
+			executor.NewSerialTestRunner(nodejs20Logger, "NodeJS20 test",
+				function.CreateFunction(nodejs20Logger, nodejs20Fn, "Create NodeJS20 Function", runtimes.NodeJSFunctionWithCloudEvent(serverlessv1alpha2.NodeJs20)),
+				assertion.CloudEventReceiveCheck(nodejs20Logger, "NodeJS20 cloud event structured check", cloudevents.EncodingStructured, nodejs20Fn.FunctionURL),
+				assertion.CloudEventReceiveCheck(nodejs20Logger, "NodeJS20 cloud event binary check", cloudevents.EncodingBinary, nodejs20Fn.FunctionURL),
+				assertion.CloudEventSendCheck(nodejs20Logger, "NodeJS20 cloud event sent check", string(serverlessv1alpha2.NodeJs20), nodejs20Fn.FunctionURL, publisherProxyMock.FunctionURL),
 			),
 		),
 	), nil

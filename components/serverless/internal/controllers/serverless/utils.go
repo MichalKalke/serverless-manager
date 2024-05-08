@@ -100,7 +100,7 @@ func getArg(args []string, arg string) string {
 
 func getPackageConfigVolumeMountsForRuntime(rtm serverlessv1alpha2.Runtime) []corev1.VolumeMount {
 	switch rtm {
-	case serverlessv1alpha2.NodeJs16, serverlessv1alpha2.NodeJs18:
+	case serverlessv1alpha2.NodeJs18, serverlessv1alpha2.NodeJs20:
 		return []corev1.VolumeMount{
 			{
 				Name:      "registry-config",
@@ -109,7 +109,7 @@ func getPackageConfigVolumeMountsForRuntime(rtm serverlessv1alpha2.Runtime) []co
 				SubPath:   ".npmrc",
 			},
 		}
-	case serverlessv1alpha2.Python39:
+	case serverlessv1alpha2.Python39, serverlessv1alpha2.Python312:
 		return []corev1.VolumeMount{
 			{
 				Name:      "registry-config",
@@ -222,6 +222,7 @@ func equalDeployments(existing appsv1.Deployment, expected appsv1.Deployment) bo
 
 	result = result && mapsEqual(existing.Spec.Template.GetAnnotations(), expected.Spec.Template.GetAnnotations())
 	result = result && equalSecretMounts(existing.Spec.Template.Spec, expected.Spec.Template.Spec)
+	result = result && equalInt32Pointer(existing.Spec.RevisionHistoryLimit, expected.Spec.RevisionHistoryLimit)
 	return result
 }
 
@@ -362,22 +363,24 @@ func getCondition(conditions []serverlessv1alpha2.Condition, conditionType serve
 	return serverlessv1alpha2.Condition{}
 }
 
-func calculateInlineImageTag(instance *serverlessv1alpha2.Function) string {
+func calculateInlineImageTag(instance *serverlessv1alpha2.Function, runtimeBase string) string {
 	hash := sha256.Sum256([]byte(strings.Join([]string{
 		string(instance.GetUID()),
 		fmt.Sprintf("%v", *instance.Spec.Source.Inline),
 		instance.EffectiveRuntime(),
+		runtimeBase,
 	}, "-")))
 
 	return fmt.Sprintf("%x", hash)
 }
 
-func calculateGitImageTag(instance *serverlessv1alpha2.Function) string {
+func calculateGitImageTag(instance *serverlessv1alpha2.Function, runtimeBase string) string {
 	data := strings.Join([]string{
 		string(instance.GetUID()),
 		instance.Status.Commit,
 		instance.Status.BaseDir,
 		instance.EffectiveRuntime(),
+		runtimeBase,
 	}, "-")
 	hash := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hash)

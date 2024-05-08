@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	serverlessv1alpha2 "github.com/kyma-project/serverless/components/serverless/pkg/apis/serverless/v1alpha2"
@@ -40,7 +40,7 @@ const (
 
 func TestFunctionReconciler_Reconcile_Scaling(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	rtm := serverlessv1alpha2.NodeJs18
+	rtm := serverlessv1alpha2.NodeJs20
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)
 	testCfg := setUpControllerConfig(g)
@@ -232,7 +232,7 @@ func TestFunctionReconciler_Reconcile_Scaling(t *testing.T) {
 
 		functionWithReplicas := function.DeepCopy()
 		functionWithReplicas.Spec.ScaleConfig = nil
-		functionWithReplicas.Spec.Replicas = pointer.Int32(3)
+		functionWithReplicas.Spec.Replicas = ptr.To[int32](3)
 
 		g.Expect(resourceClient.Update(context.TODO(), functionWithReplicas)).To(gomega.Succeed())
 
@@ -273,13 +273,13 @@ func TestFunctionReconciler_Reconcile_Scaling(t *testing.T) {
 		g.Expect(len(deployments.Items)).To(gomega.Equal(1))
 		deployment := &deployments.Items[0]
 		g.Expect(deployment).ToNot(gomega.BeNil())
-		g.Expect(deployment.Spec.Replicas).To(gomega.Equal(pointer.Int32(3)))
+		g.Expect(deployment.Spec.Replicas).To(gomega.Equal(ptr.To[int32](3)))
 	})
 }
 
 func TestFunctionReconciler_ResourceConfig(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	rtm := serverlessv1alpha2.NodeJs18
+	rtm := serverlessv1alpha2.NodeJs20
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)
 	testCfg := setUpControllerConfig(g)
@@ -399,7 +399,7 @@ func TestFunctionReconciler_Reconcile(t *testing.T) {
 
 	t.Parallel()
 	g := gomega.NewGomegaWithT(t)
-	rtm := serverlessv1alpha2.NodeJs18
+	rtm := serverlessv1alpha2.NodeJs20
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)
 	testCfg := setUpControllerConfig(g)
@@ -456,57 +456,6 @@ func TestFunctionReconciler_Reconcile(t *testing.T) {
 		assertSuccessfulFunctionBuild(t, resourceClient, reconciler, request, fnLabels, false)
 
 		assertSuccessfulFunctionDeployment(t, resourceClient, reconciler, request, fnLabels, "localhost:32132", false)
-
-		t.Log("should detect registry configuration change and rebuild function")
-		customDockerRegistryConfiguration := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "serverless-registry-config",
-				Namespace: testNamespace,
-			},
-			StringData: map[string]string{
-				"registryAddress": "registry.external.host",
-			},
-		}
-		g.Expect(resourceClient.Create(context.TODO(), &customDockerRegistryConfiguration)).To(gomega.Succeed())
-
-		result, err = reconciler.Reconcile(ctx, request)
-		g.Expect(err).To(gomega.BeNil())
-		g.Expect(result.Requeue).To(gomega.BeFalse())
-		g.Expect(result.RequeueAfter).To(gomega.Equal(time.Second * 1))
-
-		function = &serverlessv1alpha2.Function{}
-		g.Expect(resourceClient.Get(context.TODO(), request.NamespacedName, function)).To(gomega.Succeed())
-		g.Expect(function.Status.Conditions).To(gomega.HaveLen(conditionLen))
-		g.Expect(getConditionStatus(function.Status.Conditions, serverlessv1alpha2.ConditionConfigurationReady)).To(gomega.Equal(corev1.ConditionTrue))
-		g.Expect(getConditionStatus(function.Status.Conditions, serverlessv1alpha2.ConditionBuildReady)).To(gomega.Equal(corev1.ConditionUnknown))
-		g.Expect(getConditionStatus(function.Status.Conditions, serverlessv1alpha2.ConditionRunning)).To(gomega.Equal(corev1.ConditionTrue))
-
-		g.Expect(getConditionReason(function.Status.Conditions, serverlessv1alpha2.ConditionBuildReady)).To(gomega.Equal(serverlessv1alpha2.ConditionReasonJobsDeleted))
-
-		assertSuccessfulFunctionBuild(t, resourceClient, reconciler, request, fnLabels, true)
-
-		assertSuccessfulFunctionDeployment(t, resourceClient, reconciler, request, fnLabels, "registry.external.host", true)
-
-		t.Log("should detect registry configuration rollback to default configuration")
-		g.Expect(resourceClient.Delete(context.TODO(), &customDockerRegistryConfiguration)).To(gomega.Succeed())
-
-		result, err = reconciler.Reconcile(ctx, request)
-		g.Expect(err).To(gomega.BeNil())
-		g.Expect(result.Requeue).To(gomega.BeFalse())
-		g.Expect(result.RequeueAfter).To(gomega.Equal(time.Second * 1))
-
-		function = &serverlessv1alpha2.Function{}
-		g.Expect(resourceClient.Get(context.TODO(), request.NamespacedName, function)).To(gomega.Succeed())
-		g.Expect(function.Status.Conditions).To(gomega.HaveLen(conditionLen))
-		g.Expect(getConditionStatus(function.Status.Conditions, serverlessv1alpha2.ConditionConfigurationReady)).To(gomega.Equal(corev1.ConditionTrue))
-		g.Expect(getConditionStatus(function.Status.Conditions, serverlessv1alpha2.ConditionBuildReady)).To(gomega.Equal(corev1.ConditionUnknown))
-		g.Expect(getConditionStatus(function.Status.Conditions, serverlessv1alpha2.ConditionRunning)).To(gomega.Equal(corev1.ConditionTrue))
-
-		g.Expect(getConditionReason(function.Status.Conditions, serverlessv1alpha2.ConditionBuildReady)).To(gomega.Equal(serverlessv1alpha2.ConditionReasonJobsDeleted))
-
-		assertSuccessfulFunctionBuild(t, resourceClient, reconciler, request, fnLabels, true)
-
-		assertSuccessfulFunctionDeployment(t, resourceClient, reconciler, request, fnLabels, "localhost:32132", true)
 	})
 	t.Run("should set proper status on deployment fail", func(t *testing.T) {
 		//GIVEN
@@ -663,8 +612,7 @@ func TestFunctionReconciler_Reconcile(t *testing.T) {
 		excessJob.UID = ""
 		excessJob.CreationTimestamp = metav1.Time{}
 		excessJob.Spec.Selector = nil
-		delete(excessJob.Spec.Template.ObjectMeta.Labels, "controller-uid")
-		delete(excessJob.Spec.Template.ObjectMeta.Labels, "job-name")
+		excessJob.Spec.Template.ObjectMeta.Labels = map[string]string{"label": "value"}
 		g.Expect(resourceClient.Create(context.TODO(), excessJob)).To(gomega.Succeed())
 
 		err = reconciler.client.ListByLabel(context.TODO(), function.GetNamespace(), fnLabels, jobList)

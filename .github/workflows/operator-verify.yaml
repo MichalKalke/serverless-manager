@@ -15,90 +15,84 @@ on:
       - converted_to_draft
 
 jobs:
-  # pre-serverless-operator-lint
-  lint:
+  operator-unit-tests:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          working-directory: 'components/operator'
-
-  # pre-serverless-operator-unit-tests
-  unit-test:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go
       - name: run test
         run: make -C components/operator test
 
-  # pre-serverless-operator-verify, post-serverless-operator-verify
-  integration-test:
-    runs-on: ubuntu-latest
+  operator-integration-test:
     if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: create single cluster
-        uses: AbsaOSS/k3d-action@4e8b3239042be1dc0aed6c5eb80c13b18200fc79 #v2.4.0
-        with:
-          cluster-name: "k3dCluster"
-          args: >-
-            --agents 1
-            --image rancher/k3s:v1.27.9-k3s1
-            --port 80:80@loadbalancer
-            --port 443:443@loadbalancer
-            --wait
-      - name: run test (pre)
+      - uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/create-single-cluster
+      - name: run integration test (pre)
         if: github.event_name == 'pull_request'
-        run: make -C components/operator/hack/ci integration-test-on-cluster
+        run: |
+          make -C components/operator deploy
+          make -C tests/operator test
         env:
-          IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-${{ github.event.number }}
-      - name: run test (post)
+          IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
+      - name: run integration test (post)
         if: github.event_name == 'push'
-        run: make -C components/operator/hack/ci integration-test-on-cluster
+        run: |
+          make -C components/operator deploy
+          make -C tests/operator test
         env:
           IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
+      - name: collect cluster-info
+        if: ${{ always() }}
+        run: make -C tests/operator cluster-info
 
-  # post-serverless-operator-upgrade-latest-to-main
-  upgrade-test:
+  operator-upgrade-test:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      - name: create single cluster
-        uses: AbsaOSS/k3d-action@4e8b3239042be1dc0aed6c5eb80c13b18200fc79 #v2.4.0
-        with:
-          cluster-name: "k3dCluster"
-          args: >-
-            --agents 1
-            --image rancher/k3s:v1.27.9-k3s1
-            --port 80:80@loadbalancer
-            --port 443:443@loadbalancer
-            --wait
+      - uses: ./.github/actions/setup-go
+      - uses: ./.github/actions/create-single-cluster
       - name: upgrade test
-        run: make -C components/operator/hack/ci upgrade-test
+        run: |
+          make -C components/operator deploy-release
+          make -C tests/operator test
+          make -C components/operator deploy
+          make -C tests/operator test
         env:
           IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
+      - name: collect cluster-info
+        if: ${{ always() }}
+        run: make -C tests/operator cluster-info
 
   gardener-integration-test:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: save sa
-      shell: bash
-      run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
-      env:
-        GARDENER_SA: ${{ secrets.GARDENER_SA }}
-    - name: run test
-      run: make -C components/operator/hack/ci gardener-integration-test
-      env:
-        IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
-        GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
-        GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
-        GARDENER_SA_PATH: /tmp/gardener-sa.yaml
-        IMG_DIRECTORY: "prod"
-        IMG_VERSION: ${{ github.sha }}
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-go
+      - name: save sa
+        shell: bash
+        run: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+        env:
+          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+      - name: provision gardener
+        run: make -C hack provision-gardener
+        env:
+          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
+          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
+          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+      - name: run test
+        run: |
+          make -C components/operator deploy
+          make -C tests/operator test
+        env:
+          IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
+      - name: deprovision gardener
+        if: ${{ always() }}
+        run: make -C hack deprovision-gardener
+        env:
+          GARDENER_SA_PATH: /tmp/gardener-sa.yaml

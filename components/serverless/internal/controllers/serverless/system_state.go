@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const DefaultDeploymentReplicas int32 = 1
@@ -66,20 +66,20 @@ func prometheusSvcAnnotations() map[string]string {
 		"prometheus.io/scrape": "true",
 	}
 }
-func (s *systemState) buildImageAddress(registryAddress string) string {
+func (s *systemState) buildImageAddress(registryAddress string, runtimeBase string) string {
 	var imageTag string
 	isGitType := s.instance.TypeOf(serverlessv1alpha2.FunctionTypeGit)
 	if isGitType {
-		imageTag = calculateGitImageTag(&s.instance)
+		imageTag = calculateGitImageTag(&s.instance, runtimeBase)
 	} else {
-		imageTag = calculateInlineImageTag(&s.instance)
+		imageTag = calculateInlineImageTag(&s.instance, runtimeBase)
 	}
 	return fmt.Sprintf("%s/%s-%s:%s", registryAddress, s.instance.Namespace, s.instance.Name, imageTag)
 }
 
 // TODO to self - create issue to refactor this
-func (s *systemState) inlineFnSrcChanged(dockerPullAddress string) bool {
-	image := s.buildImageAddress(dockerPullAddress)
+func (s *systemState) inlineFnSrcChanged(dockerPullAddress string, runtimeBase string) bool {
+	image := s.buildImageAddress(dockerPullAddress, runtimeBase)
 	configurationStatus := getConditionStatus(s.instance.Status.Conditions, serverlessv1alpha2.ConditionConfigurationReady)
 	rtm := fnRuntime.GetRuntime(s.instance.Spec.Runtime)
 	fnLabels := s.functionLabels()
@@ -208,10 +208,10 @@ func (s *systemState) buildJobJob(templateSpec corev1.PodSpec) batchv1.Job {
 			Labels:       fnLabels,
 		},
 		Spec: batchv1.JobSpec{
-			Parallelism:           pointer.Int32(1),
-			Completions:           pointer.Int32(1),
+			Parallelism:           ptr.To[int32](1),
+			Completions:           ptr.To[int32](1),
 			ActiveDeadlineSeconds: nil,
-			BackoffLimit:          pointer.Int32(0),
+			BackoffLimit:          ptr.To[int32](0),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      fnLabels,
@@ -240,7 +240,7 @@ func (s *systemState) buildGitJobRepoFetcherContainer(gitOptions git.Options, cf
 }
 
 func (s *systemState) buildJobExecutorContainer(cfg cfg, volumeMounts []corev1.VolumeMount) corev1.Container {
-	imageName := s.buildImageAddress(cfg.docker.PushAddress)
+	imageName := s.buildImageAddress(cfg.docker.PushAddress, cfg.runtimeBaseImage)
 	args := append(cfg.fn.Build.ExecutorArgs,
 		fmt.Sprintf("%s=%s", destinationArg, imageName),
 		fmt.Sprintf("--context=dir://%s", workspaceMountPath))
@@ -260,6 +260,12 @@ func (s *systemState) buildJobExecutorContainer(cfg cfg, volumeMounts []corev1.V
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Env: []corev1.EnvVar{
 			{Name: "DOCKER_CONFIG", Value: "/docker/.docker/"},
+			// GOOGLE_APPLICATION_CREDENTIALS is set to file which does not exist to prevent GCE credential helper creation
+			// this is required because Kaniko does not work on clusters run on GKE with the default GCE ServiceAccount
+			// with bound bearer token to it. When such SA exists then Kaniko uses this token to pull any image
+			// from the pkg.dev registry - even public ones - which causes 401 UNAUTHORIZED status during runtime
+			// base pull because we store our runtime bases on the pkg.dev registry
+			{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/dev/null"},
 		},
 		SecurityContext: buildJobContainerSecurityContext(),
 	}
@@ -333,7 +339,7 @@ func buildRegistryConfigVolume(cfg cfg) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: cfg.fn.PackageRegistryConfigSecretName,
-				Optional:   pointer.Bool(true),
+				Optional:   ptr.To[bool](true),
 			},
 		},
 	}
@@ -408,8 +414,8 @@ type buildDeploymentArgs struct {
 	ImagePullAccountName   string
 }
 
-func (s *systemState) buildDeployment(cfg buildDeploymentArgs, resourceConfig Resources) appsv1.Deployment {
-	imageName := s.buildImageAddress(cfg.DockerPullAddress)
+func (s *systemState) buildDeployment(args buildDeploymentArgs, cfg cfg) appsv1.Deployment {
+	imageName := s.buildImageAddress(args.DockerPullAddress, cfg.runtimeBaseImage)
 
 	const volumeName = "tmp-dir"
 	emptyDirVolumeSize := resource.MustParse("100Mi")
@@ -421,8 +427,8 @@ func (s *systemState) buildDeployment(cfg buildDeploymentArgs, resourceConfig Re
 	deploymentEnvs := buildDeploymentEnvs(
 		s.instance.GetName(),
 		s.instance.GetNamespace(),
-		cfg.TraceCollectorEndpoint,
-		cfg.PublisherProxyAddress,
+		args.TraceCollectorEndpoint,
+		args.PublisherProxyAddress,
 	)
 	envs = append(envs, deploymentEnvs...)
 
@@ -462,7 +468,7 @@ func (s *systemState) buildDeployment(cfg buildDeploymentArgs, resourceConfig Re
 				Name:         functionContainerName,
 				Image:        imageName,
 				Env:          envs,
-				Resources:    getDeploymentResources(s.instance, resourceConfig),
+				Resources:    getDeploymentResources(s.instance, cfg.fn.ResourceConfig.Function.Resources),
 				VolumeMounts: volumeMounts,
 				/*
 					In order to mark pod as ready we need to ensure the function is actually running and ready to serve traffic.
@@ -508,10 +514,11 @@ func (s *systemState) buildDeployment(cfg buildDeploymentArgs, resourceConfig Re
 				SecurityContext: restrictiveContainerSecurityContext(),
 			},
 		},
-		ServiceAccountName: cfg.ImagePullAccountName,
+		ServiceAccountName: args.ImagePullAccountName,
 	}
 	enrichPodSpecWithSecurityContext(&templateSpec, functionUser, functionUserGroup)
 
+	zero := int32(0)
 	return appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: fmt.Sprintf("%s-", s.instance.GetName()),
@@ -519,7 +526,8 @@ func (s *systemState) buildDeployment(cfg buildDeploymentArgs, resourceConfig Re
 			Labels:       s.functionLabels(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: s.getReplicas(DefaultDeploymentReplicas),
+			RevisionHistoryLimit: &zero,
+			Replicas:             s.getReplicas(DefaultDeploymentReplicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: s.deploymentSelectorLabels(), // this has to match spec.template.objectmeta.Labels
 				// and also it has to be immutable
@@ -563,8 +571,8 @@ func buildDeploymentSecretVolumes(secretMounts []serverlessv1alpha2.SecretMount)
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  secretMount.SecretName,
-					DefaultMode: pointer.Int32(0666), //read and write only for everybody
-					Optional:    pointer.Bool(false),
+					DefaultMode: ptr.To[int32](0666), //read and write only for everybody
+					Optional:    ptr.To[bool](false),
 				},
 			},
 		}
@@ -732,14 +740,14 @@ func (s *systemState) jobFailed(p func(reason string) bool) bool {
 func restrictiveContainerSecurityContext() *corev1.SecurityContext {
 	defaultProcMount := corev1.DefaultProcMount
 	return &corev1.SecurityContext{
-		Privileged: pointer.Bool(false),
+		Privileged: ptr.To[bool](false),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
 		},
 		ProcMount:              &defaultProcMount,
-		ReadOnlyRootFilesystem: pointer.Bool(true),
+		ReadOnlyRootFilesystem: ptr.To[bool](true),
 	}
 }
 
@@ -752,7 +760,7 @@ func buildJobContainerSecurityContext() *corev1.SecurityContext {
 		"SETGID",       // for "fork"
 		"DAC_OVERRIDE", // for "open"
 	}
-	securityContext.ReadOnlyRootFilesystem = pointer.Bool(false)
+	securityContext.ReadOnlyRootFilesystem = ptr.To[bool](false)
 	return securityContext
 }
 

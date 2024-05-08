@@ -8,7 +8,7 @@ You can specify environment variables in the Function definition, or define refe
 
 Before you start, make sure you have these tools installed:
 
-- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) on a cluster
+- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) in a cluster
 
 ## Steps
 
@@ -37,10 +37,11 @@ kubectl create secret generic my-secret --from-literal secret-env="I come from s
     ```
 
 4. Define environment variables as part of the Function configuration file. Modify `config.yaml` with the following:
+
     ```yaml
     name: my-function
     namespace: default
-    runtime: nodejs18
+    runtime: nodejs20
     source:
         sourceType: inline
     env:
@@ -57,7 +58,9 @@ kubectl create secret generic my-secret --from-literal secret-env="I come from s
             name: my-secret
             key: secret-env
     ```
+
 5. Use injected environment variables in the handler file. Modify `handler.js` with the following:
+
     ```js
     module.exports = {
         main: function (event, context) {
@@ -113,7 +116,7 @@ kubectl create secret generic my-secret --from-literal secret-env="I come from s
            secretKeyRef:
              key: secret-env
              name: my-secret
-     runtime: nodejs18
+     runtime: nodejs20
      source:
        inline:
          source: |-

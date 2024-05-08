@@ -2,6 +2,9 @@ package serverless
 
 import (
 	"context"
+	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -138,6 +142,16 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, request ctrl.Request
 
 	contextLogger.Debug("starting state machine")
 
+	runtime := instance.Status.Runtime
+	if runtime == "" {
+		runtime = instance.Spec.Runtime
+	}
+
+	latestRuntimeImage, err := r.getRuntimeImageFromConfigMap(ctx, instance.GetNamespace(), runtime)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "failed to fetch runtime image from config map")
+	}
+
 	stateReconciler := reconciler{
 		fn:  r.initStateFunction,
 		log: contextLogger,
@@ -147,8 +161,9 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, request ctrl.Request
 			statsCollector: r.statsCollector,
 		},
 		cfg: cfg{
-			fn:     r.config,
-			docker: dockerCfg,
+			fn:               r.config,
+			docker:           dockerCfg,
+			runtimeBaseImage: latestRuntimeImage,
 		},
 		gitClient: r.gitFactory.GetGitClient(contextLogger),
 	}
@@ -173,21 +188,10 @@ func (r *FunctionReconciler) sendHealthCheck() {
 
 func (r *FunctionReconciler) readDockerConfig(ctx context.Context, instance *serverlessv1alpha2.Function) (DockerConfig, error) {
 	var secret corev1.Secret
-	// try reading user config
-	// DEPRECATED - this feature will be supported but we can disable it by removing lines below
-	// TODO: remove it in April 2024 - https://github.com/kyma-project/serverless/issues/400
-	if err := r.client.Get(ctx, client.ObjectKey{Namespace: instance.Namespace, Name: r.config.ImageRegistryExternalDockerConfigSecretName}, &secret); err == nil {
-		data := readSecretData(secret.Data)
-		return DockerConfig{
-			ActiveRegistryConfigSecretName: r.config.ImageRegistryExternalDockerConfigSecretName,
-			PushAddress:                    data[keyRegistryAddress],
-			PullAddress:                    data[keyRegistryAddress],
-		}, nil
-	}
 
 	// try reading default config
 	if err := r.client.Get(ctx, client.ObjectKey{Namespace: instance.Namespace, Name: r.config.ImageRegistryDefaultDockerConfigSecretName}, &secret); err != nil {
-		return DockerConfig{}, errors.Wrapf(err, "docker registry configuration not found, none of configuration secrets (%s, %s) found in function namespace", r.config.ImageRegistryDefaultDockerConfigSecretName, r.config.ImageRegistryExternalDockerConfigSecretName)
+		return DockerConfig{}, errors.Wrapf(err, "docker registry configuration not found, configuration secret (%s) not found in function namespace", r.config.ImageRegistryDefaultDockerConfigSecretName)
 	}
 	data := readSecretData(secret.Data)
 	if data[keyIsInternal] == "true" {
@@ -204,4 +208,21 @@ func (r *FunctionReconciler) readDockerConfig(ctx context.Context, instance *ser
 		}, nil
 	}
 
+}
+
+func (r *FunctionReconciler) getRuntimeImageFromConfigMap(ctx context.Context, namespace string, runtime serverlessv1alpha2.Runtime) (string, error) {
+	instance := &corev1.ConfigMap{}
+	dockerfileConfigMapName := fmt.Sprintf("dockerfile-%s", runtime)
+	err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: dockerfileConfigMapName}, instance)
+	if err != nil {
+		return "", errors.Wrap(err, "while extracting correct config map for given runtime")
+	}
+	baseImage := instance.Data["Dockerfile"]
+	re := regexp.MustCompile(`base_image=.*`)
+	matchedLines := re.FindStringSubmatch(baseImage)
+	if len(matchedLines) == 0 {
+		return "", errors.Errorf("could not find the base image from %s", dockerfileConfigMapName)
+	}
+	runtimeImage := strings.TrimPrefix(matchedLines[0], "base_image=")
+	return runtimeImage, err
 }
