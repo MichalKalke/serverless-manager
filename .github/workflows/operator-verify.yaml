@@ -37,7 +37,7 @@ jobs:
           make -C components/operator deploy
           make -C tests/operator test
         env:
-          IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-${{ github.event.number }}
+          IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
       - name: run integration test (post)
         if: github.event_name == 'push'
         run: |
