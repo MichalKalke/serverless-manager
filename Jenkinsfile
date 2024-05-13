@@ -7,16 +7,16 @@ pipeline {
     }
 
     environment {
-        GOROOT = '/usr/local/go' // Set GOROOT here
-        GOPATH = "${WORKSPACE}/go" // go get installs to this directory
-        GOCACHE = '/tmp/go-cache' // Set GOCACHE here
-        PATH = "${WORKSPACE}/go/bin:${env.GOROOT}/bin:${env.PATH}" // Add to PATH
+        GOROOT = '/usr/local/go' 
+        GOPATH = "${WORKSPACE}/go" 
+        GOCACHE = '/tmp/go-cache'
     }
     
     stages {
         stage('Operator Lint') {
             steps {
                 checkout scm
+                sh 'echo ${WORKSPACE}'
                 sh 'go get -u github.com/golangci/golangci-lint/cmd/golangci-lint'
                 dir('components/operator') {
                     sh 'golangci-lint run ./...'
