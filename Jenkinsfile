@@ -3,6 +3,9 @@ pipeline {
         docker {
             image 'golang:1.22.1'
             args '-v /usr/local/go/pkg:/usr/local/go/pkg'
+            environment {
+                GOROOT = '/usr/local/go' // Set GOROOT here
+            }
         }
     }
 
