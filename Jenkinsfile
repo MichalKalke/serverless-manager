@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'golang:1.22.1'
-            args '-v /usr/local/go/pkg:/usr/local/go/pkg'
+            args '-v /usr/local/go/pkg:/usr/local/go/pkg -v /go/go-cache:/go/go-cache'
         }
     }
 
@@ -17,15 +17,19 @@ pipeline {
         stage('Operator Lint') {
             steps {
                 checkout scm
-                sh 'which go'
-                sh 'go version'
-                sh 'go env'
+                sh 'echo $GOCACHE'
+                sh 'echo $PATH'
+                sh 'echo $GOROOT'
+                sh 'echo $GOPATH'
                 sh '''
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /go/bin v1.58.1
-            golangci-lint --version
-        '''
+                    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /go/bin v1.58.1
+                    golangci-lint --version
+                '''
                 dir('components/operator') {
-                    sh 'golangci-lint run ./...'
+                    sh '''
+                        export GOCACHE=/go/go-cache
+                        golangci-lint run ./...
+                    '''
                 }
             }
         }
