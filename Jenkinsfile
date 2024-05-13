@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         GOROOT = '/usr/local/go' // Set GOROOT here
+        GOCACHE = '/tmp/go-cache' // Set GOCACHE here
     }
     
     stages {
