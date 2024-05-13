@@ -28,6 +28,7 @@ pipeline {
                 '''
                 dir('components/operator') {
                     sh '''
+                        go mod tidy
                         golangci-lint run ./...
                     '''
                 }
