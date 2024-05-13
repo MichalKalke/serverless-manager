@@ -8,7 +8,9 @@ pipeline {
 
     environment {
         GOROOT = '/usr/local/go' // Set GOROOT here
+        GOPATH = "${WORKSPACE}/go" // go get installs to this directory
         GOCACHE = '/tmp/go-cache' // Set GOCACHE here
+        PATH = "${WORKSPACE}/go/bin:${env.GOROOT}/bin:${env.PATH}" // Add to PATH
     }
     
     stages {
