@@ -8,8 +8,8 @@ pipeline {
 
     environment {
         GOROOT = '/usr/local/go' 
-        GOPATH = '/go'
-        GOCACHE = '/go/go-cache'
+        GOPATH = '/tmp/go'
+        GOCACHE = '/tmp/go-cache'
         PATH = "${env.PATH}:${env.GOROOT}/bin:${env.GOPATH}/bin"
     }
 
