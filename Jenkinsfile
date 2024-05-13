@@ -20,8 +20,10 @@ pipeline {
                 sh 'which go'
                 sh 'go version'
                 sh 'go env'
-                sh 'go get -v -u github.com/golangci/golangci-lint/cmd/golangci-lint'
-                sh 'ls -al "${GOPATH}/bin"'
+                sh '''
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /go/bin v1.58.1
+            golangci-lint --version
+        '''
                 dir('components/operator') {
                     sh 'golangci-lint run ./...'
                 }
