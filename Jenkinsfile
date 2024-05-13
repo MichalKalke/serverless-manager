@@ -2,14 +2,15 @@ pipeline {
     agent {
         docker {
             image 'golang:1.22.1'
-            args '-v /usr/local/go/pkg:/usr/local/go/pkg'
+            args '-v /usr/local/go/pkg:/usr/local/go/pkg -v /go/go-cache:/go/go-cache'
         }
     }
 
     environment {
         GOROOT = '/usr/local/go' 
-        GOPATH = '/tmp/go'
-        GOCACHE = '/tmp/go-cache'
+        GOPATH = '/go'
+        GOCACHE = '/go/go-cache'
+        GOLANGCI_LINT_CACHE = '/go/go-cache'
         PATH = "${env.PATH}:${env.GOROOT}/bin:${env.GOPATH}/bin"
     }
 
