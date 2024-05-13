@@ -8,11 +8,11 @@ pipeline {
 
     environment {
         GOROOT = '/usr/local/go' 
-        GOPATH = '/Users/I571889/.jenkins/workspace/serverless-cicd@2/go' 
-        GOCACHE = '/tmp/go-cache'
+        GOPATH = '/go'
+        GOCACHE = '/go/go-cache'
         PATH = "${env.PATH}:${env.GOROOT}/bin:${env.GOPATH}/bin"
     }
-    
+
     stages {
         stage('Operator Lint') {
             steps {
