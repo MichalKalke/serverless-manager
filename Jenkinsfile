@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'golang:1.22.1'
-            args '-v /usr/local/go/pkg:/usr/local/go/pkg -v /go/go-cache:/go/go-cache'
+            args '-v /usr/local/go/pkg:/usr/local/go/pkg'
         }
     }
 
@@ -28,7 +28,6 @@ pipeline {
                 '''
                 dir('components/operator') {
                     sh '''
-                        export GOCACHE=/tmp/go-cache
                         golangci-lint run ./...
                     '''
                 }
