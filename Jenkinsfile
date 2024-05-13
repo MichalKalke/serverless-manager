@@ -27,7 +27,7 @@ pipeline {
                 '''
                 dir('components/operator') {
                     sh '''
-                        export GOCACHE=/go/go-cache
+                        export GOCACHE=/tmp/go-cache
                         golangci-lint run ./...
                     '''
                 }
