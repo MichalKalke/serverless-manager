@@ -69,7 +69,7 @@ jobs:
       - run:
           name: run integration test (pre)
           command: |
-            make -C components/operator deploy
+            make -C components/operator deploy-local
             make -C tests/operator test
           environment:
             IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
