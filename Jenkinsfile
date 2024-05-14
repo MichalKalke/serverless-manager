@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         GOPATH = "${WORKSPACE}"
+        GOROOT = "/opt/homebrew/opt/go/"  // or wherever you have Go installed
     }
 
     stages {
