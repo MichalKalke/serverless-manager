@@ -24,3 +24,4 @@ pipeline {
             echo 'Linting process passed.'
         }
     }
+}
