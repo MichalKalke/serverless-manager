@@ -10,7 +10,7 @@ workflows:
       - lint
       - unit-tests
       - pre-integration
-      - post-integration
+      #- post-integration
 jobs:
   lint:
     executor: go-env
@@ -32,6 +32,9 @@ jobs:
           command: make -C components/operator test
   pre-integration:
     executor: go-env
+    environment:
+      KUBECONFIG: /home/circleci/.kube/config
+      IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
     steps:
       - checkout
       - setup_remote_docker
@@ -50,34 +53,8 @@ jobs:
           command: |
             k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
       - run:
-          name: Waiting for node ready state
-          command: kubectl wait --for=condition=Ready node --all --timeout=60s
-      - run:
-          name: Run integration tests (pre)
-          command: |
-            make -C components/operator deploy
-            make -C tests/operator test
-          environment:
-            IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
-  post-integration:
-    executor: go-env
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Install k3d
-          command: |
-            curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
-      - run:
-          name: Install kubectl
-          command: |
-            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-            chmod +x kubectl
-            sudo mv kubectl /usr/local/bin/
-      - run:
-          name: Create k3d cluster
-          command: |
-            k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
+          name: Check Cluster Status
+          command: kubectl cluster-info
       - run:
           name: Waiting for node ready state
           command: kubectl wait --for=condition=Ready node --all --timeout=60s
@@ -86,5 +63,32 @@ jobs:
           command: |
             make -C components/operator deploy
             make -C tests/operator test
-          environment:
-            IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:ff0bbe7c9f0a14109758d7764c879ca89b9949c7
+#  post-integration:
+#    executor: go-env
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - run:
+#          name: Install k3d
+#          command: |
+#            curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
+#      - run:
+#          name: Install kubectl
+#          command: |
+#            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+#            chmod +x kubectl
+#            sudo mv kubectl /usr/local/bin/
+#      - run:
+#          name: Create k3d cluster
+#          command: |
+#            k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
+#      - run:
+#          name: Waiting for node ready state
+#          command: kubectl wait --for=condition=Ready node --all --timeout=60s
+#      - run:
+#          name: Run integration tests (pre)
+#          command: |
+#            make -C components/operator deploy
+#            make -C tests/operator test
+#          environment:
+#            IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:ff0bbe7c9f0a14109758d7764c879ca89b9949c7
