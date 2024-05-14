@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'golang:latest'
-            args '-v /go/go-cache:/root/.cache/go-build -v $HOME/go/pkg:/usr/local/go/pkg' // Align home dir
+            args '-w /Users/I571889/.jenkins/workspace/serverless-cicd' // Align home dir
         }
     }
 
