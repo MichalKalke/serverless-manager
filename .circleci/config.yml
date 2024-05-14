@@ -50,6 +50,9 @@ jobs:
           command: |
             k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
       - run:
+          name: Waiting for node ready state
+          command: kubectl wait --for=condition=Ready node --all --timeout=60s
+      - run:
           name: Run integration tests (pre)
           command: |
             make -C components/operator deploy
@@ -75,6 +78,9 @@ jobs:
           name: Create k3d cluster
           command: |
             k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
+      - run:
+          name: Waiting for node ready state
+          command: kubectl wait --for=condition=Ready node --all --timeout=60s
       - run:
           name: Run integration tests (pre)
           command: |
