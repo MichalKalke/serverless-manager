@@ -3,9 +3,10 @@ executors:
   go-env:
     docker:
       - image: cimg/go:1.22
-  ubuntu:
+  docker-dind:
     machine:
-      image: ubuntu-2004:202105-01
+      image: ubuntu-2204:2024.04.4
+    resource_class: medium
 workflows:
   version: 2
   build:
@@ -26,6 +27,7 @@ jobs:
       - run:
           name: Run lint
           command: golangci-lint run components/operator/
+
   unit-tests:
     executor: go-env
     steps:
@@ -33,35 +35,39 @@ jobs:
       - run:
           name: Run unit tests
           command: make -C components/operator test
+          
   pre-integration:
-    executor: ubuntu
+    executor: docker-dind
     steps:
       - checkout
       - run:
-          name: Install dependencies
+          name: Update & install dependencies
           command: |
-            sudo apt-get update 
-            sudo apt-get install -y curl bash make
-            curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
-            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            sudo apt-get update &&
+            sudo apt-get install curl bash make
             sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-            wget https://dl.google.com/go/go1.22.1.linux-amd64.tar.gz
-            sudo tar -xvf go1.22.1.linux-amd64.tar.gz -C /usr/local
-            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
       - run:
-          name: Run Docker
+          name: Install Docker
           command: |
-            sudo systemctl start docker
+            curl -fsSL get.docker.com -o get-docker.sh &&
+            sudo sh get-docker.sh
+      - run:
+          name: Install k3d
+          command: |
+            curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
+      - run:
+          name: Start a Docker daemon
+          command: |
+            sudo docker run --privileged --name k3d-dind -d docker:dind
             sleep 10
-            sudo docker run -d --privileged --name k3s-dind --network host -v /var/run/docker.sock:/var/run/docker.sock docker:dind
-            sudo docker exec k3s-dind dockerd-entrypoint.sh &
+            sudo docker exec k3d-dind docker version
+      - run:
+          name: Create k3d cluster
+          command: |
+            sudo docker exec k3d-dind k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
             sleep 20
       - run:
-          name: Create Kabernetes cluster
-          command: |
-            k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
-      - run:
-          name: Run integration tests
+          name: Run integration tests (pre)
           command: |
             make -C components/operator deploy
             make -C tests/operator test
