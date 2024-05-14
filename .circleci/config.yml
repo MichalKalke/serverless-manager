@@ -28,3 +28,43 @@ jobs:
       - run:
           name: Run unit tests
           command: make -C components/operator test
+  pre-integration:
+    executor: go-env
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Install k3d
+          command: |
+            curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
+      - run:
+          name: Create k3d cluster
+          command: |
+            k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
+      - run:
+          name: Run integration tests (pre)
+          command: |
+            make -C components/operator deploy
+            make -C tests/operator test
+          environment:
+            IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
+    post-integration:
+      executor: go-env
+      steps:
+        - checkout
+        - setup_remote_docker
+        - run:
+            name: Install k3d
+            command: |
+              curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
+        - run:
+            name: Create k3d cluster
+            command: |
+              k3d cluster create k3dCluster --agents 1 --image rancher/k3s:v1.29.3-k3s1 --port 80:80@loadbalancer --port 443:443@loadbalancer
+        - run:
+            name: Run integration tests (pre)
+            command: |
+              make -C components/operator deploy
+              make -C tests/operator test
+            environment:
+              IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:ff0bbe7c9f0a14109758d7764c879ca89b9949c7
