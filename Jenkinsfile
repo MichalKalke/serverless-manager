@@ -1,44 +1,41 @@
 pipeline {
     agent {
         docker {
-            image 'golang:1.22.1'
-            args '-v /usr/local/go/pkg:/usr/local/go/pkg'
+            image 'golang:latest'
+            args '-v $HOME/go/pkg:/usr/local/go/pkg'  // Align home dir
         }
     }
 
      environment {
+        CGO_ENABLED = '0'
         GO111MODULE = 'on'
-        GOROOT = '/usr/local/go'
-        GOCACHE = '/go/go-cache'
+        GOPATH = '/go'  // Adjusted to align with your GitLab pipeline
         GOLANGCI_LINT_CACHE = '/go/go-cache'
-        PATH = "${env.PATH}:${env.GOROOT}/bin:${env.GOPATH}/bin"
+        PATH = "/go/bin:/usr/local/go/bin:${env.PATH}"
     }
 
     stages {
         stage('Operator Lint') {
             steps {
                 checkout scm
-                sh 'echo $GOCACHE'
-                sh 'echo $PATH'
-                sh 'echo $GOROOT'
-                sh '''
-                    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.58.1
-                    golangci-lint --version
-                '''
-                dir('components/operator') {
-                    sh '''
-                        go mod tidy
-                        golangci-lint run ./...
-                    '''
+                script {  
+                   sh 'go version'
+                   sh '''
+                      curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+                      golangci-lint --version
+                      golangci-lint run components/operator/
+                  '''
                 }
             }
         }
 
         stage('Operator Unit Tests') {
             steps {
-                checkout scm
-                dir('components/operator') {
-                    sh 'make test'
+                script {
+                   sh '''
+                      cd components/operator
+                      go test ./...
+                   '''
                 }
             }
         }
