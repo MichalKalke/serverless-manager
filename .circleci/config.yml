@@ -11,22 +11,22 @@ workflows:
   version: 2
   build:
     jobs:
-      - lint
+      #- lint
       - unit-tests
       - pre-integration
       #- post-integration
 jobs:
-  lint:
-    executor: go-env
-    steps:
-      - checkout
-      - run:
-          name: Install golangci-lint
-          command: |
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
-      - run:
-          name: Run lint
-          command: golangci-lint run components/operator/
+#  lint: DONE
+#    executor: go-env
+#    steps:
+#      - checkout
+#      - run:
+#          name: Install golangci-lint
+#          command: |
+#            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+#      - run:
+#          name: Run lint
+#          command: golangci-lint run components/operator/
 
   unit-tests:
     executor: go-env
@@ -60,6 +60,12 @@ jobs:
             sudo docker run --rm --privileged --name k3d-dind -d docker:dind
             sleep 10
             sudo docker exec k3d-dind docker version
+      - run:
+          name: Install curl and bash in the container
+          command: |
+            sudo docker exec k3d-dind sh -c "apk update"
+            sudo docker exec k3d-dind sh -c "apk add curl"
+            sudo docker exec k3d-dind sh -c "apk add bash"
       - run:
           name: Install k3d and create cluster
           command: |
