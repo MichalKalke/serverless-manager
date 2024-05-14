@@ -7,6 +7,7 @@ pipeline {
     }
 
      environment {
+        GO111MODULE = 'on'
         GOROOT = '/usr/local/go'
         GOCACHE = '/go/go-cache'
         GOLANGCI_LINT_CACHE = '/go/go-cache'
