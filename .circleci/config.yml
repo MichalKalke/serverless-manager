@@ -28,13 +28,13 @@ jobs:
 #          name: Run lint
 #          command: golangci-lint run components/operator/
 
-  unit-tests:
-    executor: go-env
-    steps:
-      - checkout
-      - run:
-          name: Run unit tests
-          command: make -C components/operator test
+#  unit-tests: DONE
+#    executor: go-env
+#    steps:
+#      - checkout
+#      - run:
+#          name: Run unit tests
+#          command: make -C components/operator test
 
   pre-integration:
     executor: docker-dind
@@ -69,14 +69,20 @@ jobs:
       - run:
           name: Install k3d and create cluster
           command: |
-            sudo docker exec -it k3d-dind sh -c "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash" &&
-            sudo docker exec -it k3d-dind k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
+            sudo docker exec -it k3d-dind sh -c "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash"
+            sudo docker exec -it k3d-dind sh -c "k3d cluster create k3dCluster --agents 1 --image 'rancher/k3s:v1.29.3-k3s1' --port 80:80@loadbalancer --port 443:443@loadbalancer --api-port 0.0.0.0:6443 --wait"
+      - run:
+          name: Configure kubectl
+          command: |
+            sudo docker exec -it k3d-dind sh -c "k3d kubeconfig get k3dCluster > kubeconfig.yaml"
+            KUBECONFIG=kubeconfig.yaml kubectl get pods -A
       - run:
           name: Run integration tests (pre)
           command: |
             make -C components/operator deploy
             make -C tests/operator test
           environment:
+            KUBECONFIG: kubeconfig.yaml
             IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
 #  post-integration:
 #    executor: go-env
