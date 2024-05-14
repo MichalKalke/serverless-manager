@@ -65,7 +65,7 @@ jobs:
       - run:
           name: create cluster
           command: |
-            k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
+            k3d cluster create kyma --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
       - run:
           name: run integration test (pre)
           command: |
