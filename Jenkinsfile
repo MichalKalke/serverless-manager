@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'golang:latest'
-            args '-v $HOME/go/pkg:/usr/local/go/pkg'  // Align home dir
+            args '-v /go/go-cache:/root/.cache/go-build -v $HOME/go/pkg:/usr/local/go/pkg' // Align home dir
         }
     }
 
@@ -10,8 +10,9 @@ pipeline {
         CGO_ENABLED = '0'
         GO111MODULE = 'on'
         GOPATH = '/go' 
-        GOROOT = '/usr/local/go' // Added this line
+        GOROOT = '/usr/local/go'
         GOLANGCI_LINT_CACHE = '/go/go-cache'
+        GOCACHE = '/go/go-cache' // Added this line
         PATH = "/go/bin:/usr/local/go/bin:${env.PATH}"
     }
 
