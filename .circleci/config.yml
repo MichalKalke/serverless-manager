@@ -41,33 +41,30 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Update & install dependencies
+          name: Install dependencies
           command: |
-            sudo apt-get update &&
-            sudo apt-get install curl bash make
-            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            sudo apt-get update
+            sudo apt-get -y install curl bash make
+            curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
             chmod +x kubectl
             sudo mv kubectl /usr/local/bin/
       - run:
           name: Install Docker
           command: |
-            curl -fsSL get.docker.com -o get-docker.sh &&
-            sudo sh get-docker.sh
+            curl -sSL https://get.docker.com/ | sh
       - run:
-          name: Install k3d
+          name: Start Docker daemon
           command: |
-            curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
-      - run:
-          name: Start a Docker daemon
-          command: |
-            sudo docker run --privileged --name k3d-dind -d docker:dind
+            sudo systemctl start docker
+            sleep 10
+            sudo docker run --rm --privileged --name k3d-dind -d docker:dind
             sleep 10
             sudo docker exec k3d-dind docker version
       - run:
-          name: Create k3d cluster
+          name: Install k3d and create cluster
           command: |
-            sudo docker exec k3d-dind k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
-            sleep 20
+            sudo docker exec -it k3d-dind sh -c "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash" &&
+            sudo docker exec -it k3d-dind k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
       - run:
           name: Run integration tests (pre)
           command: |
