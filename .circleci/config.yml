@@ -37,52 +37,30 @@ jobs:
 #          command: make -C components/operator test
 
   pre-integration:
-    executor: docker-dind
+    docker:
+      - image: cimg/go:1.16
+      - image: docker:20.10.7-dind
+        environment:
+          DOCKER_TLS_CERTDIR: ""
+    resource_class: medium
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.7
+          docker_layer_caching: false
       - run:
-          name: Install dependencies
+          name: install k3d
+          command: curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
+      - run:
+          name: create cluster
           command: |
-            sudo apt-get update
-            sudo apt-get -y install curl bash make
-            curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
-            chmod +x kubectl
-            sudo mv kubectl /usr/local/bin/
+            k3d cluster create k3dCluster --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
       - run:
-          name: Install Docker
-          command: |
-            curl -sSL https://get.docker.com/ | sh
-      - run:
-          name: Start Docker daemon
-          command: |
-            sudo systemctl start docker
-            sleep 10
-            sudo docker run --rm --privileged --name k3d-dind -d docker:dind
-            sleep 10
-            sudo docker exec k3d-dind docker version
-      - run:
-          name: Install curl and bash in the container
-          command: |
-            sudo docker exec k3d-dind sh -c "apk update"
-            sudo docker exec k3d-dind sh -c "apk add curl"
-            sudo docker exec k3d-dind sh -c "apk add bash"
-      - run:
-          name: Install k3d and create cluster
-          command: |
-            sudo docker exec -it k3d-dind sh -c "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash"
-            sudo docker exec -it k3d-dind sh -c "k3d cluster create k3dCluster --agents 1 --image 'rancher/k3s:v1.29.3-k3s1' --port 80:80@loadbalancer --port 443:443@loadbalancer --api-port 0.0.0.0:6443 --wait"
-      - run:
-          name: Configure kubectl
-          command: |
-            sudo docker exec -it k3d-dind sh -c "k3d kubeconfig get k3dCluster > kubeconfig.yaml"
-            KUBECONFIG=kubeconfig.yaml kubectl get pods -A
-      - run:
-          name: Run integration tests (pre)
+          name: run integration test (pre)
           command: |
             make -C components/operator deploy
             make -C tests/operator test
           environment:
-            KUBECONFIG: kubeconfig.yaml
             IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
 #  post-integration:
 #    executor: go-env
