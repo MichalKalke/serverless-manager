@@ -25,7 +25,7 @@ pipeline {
                    sh '''
                       curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
                       golangci-lint --version
-                      golangci-lint run --buildvcs=false components/operator/
+                      golangci-lint run --debug components/operator/
                   '''
                 }
             }
