@@ -14,7 +14,9 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
+                    ls
                     go get -u golang.org/x/lint/golint
+                    ls
                     ${GOPATH}/bin/golint -set_exit_status ${WORKSPACE}/components/operator/...
                 ''' 
             }
