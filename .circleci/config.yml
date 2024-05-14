@@ -8,6 +8,7 @@ workflows:
   build:
     jobs:
       - lint
+      - unit-tests
 jobs:
   lint:
     executor: go-env
@@ -20,3 +21,10 @@ jobs:
       - run:
           name: Run lint
           command: golangci-lint run components/operator/
+  unit-tests:
+    executor: go-env
+    steps:
+      - checkout
+      - run:
+          name: Run unit tests
+          command: make -C components/operator test
