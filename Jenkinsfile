@@ -4,7 +4,9 @@ pipeline {
             image 'golang:latest'
         }
     }
-
+    environment {
+        GOLANGCI_LINT_CACHE = '/home'
+    }
     stages {
         stage('Operator Lint') {
             steps {
