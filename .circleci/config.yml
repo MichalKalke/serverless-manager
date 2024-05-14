@@ -7,6 +7,14 @@ executors:
     machine:
       image: ubuntu-2204:2024.04.4
     resource_class: medium
+  docker-executor:
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          DOCKER_HOST: tcp://localhost:2375
+      - image: docker:20.10.7-dind
+        environment:
+          DOCKER_DRIVER: overlay2
 workflows:
   version: 2
   build:
@@ -37,16 +45,10 @@ jobs:
 #          command: make -C components/operator test
 
   pre-integration:
-    docker:
-      - image: cimg/go:1.16
-      - image: docker:20.10.7-dind
-        environment:
-          DOCKER_TLS_CERTDIR: ""
-    resource_class: medium
+    executor: docker-executor
     steps:
       - checkout
       - setup_remote_docker:
-          version: 20.10.7
           docker_layer_caching: false
       - run:
           name: install k3d
