@@ -1,0 +1,22 @@
+version: 2.1
+executors:
+  go-env:
+    docker:
+      - image: cimg/go:1.22
+workflows:
+  version: 2
+  build:
+    jobs:
+      - lint
+jobs:
+  lint:
+    executor: go-env
+    steps:
+      - checkout
+      - run:
+          name: Install golangci-lint
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+      - run:
+          name: Run lint
+          command: golangci-lint run components/operator/*
