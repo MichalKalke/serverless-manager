@@ -5,7 +5,7 @@ pipeline {
         }
     }
     environment {
-        GOLANGCI_LINT_CACHE = '/home'
+        GOLANGCI_LINT_CACHE = '/tmp'
     }
     stages {
         stage('Operator Lint') {
