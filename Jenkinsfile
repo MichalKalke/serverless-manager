@@ -1,12 +1,13 @@
 pipeline {
     agent {
         docker {
-            image 'golang:latest'
+            image 'golang:1.12'
         }
     }
 
     environment {
         GOPATH = "/go"
+        GOCACHE = "${WORKSPACE}/.gocache"
         PATH = "/go/bin:${env.PATH}"
     }
 
@@ -14,9 +15,7 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
-                    ls
                     go get -u golang.org/x/lint/golint
-                    ls
                     golint -set_exit_status ${WORKSPACE}/components/operator/...
                 ''' 
             }
