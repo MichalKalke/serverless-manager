@@ -9,10 +9,14 @@ pipeline {
     stages {
         stage('Lint') {
             steps {
-                sh ''' 
+                sh '''
+                    mkdir $WORKSPACE/temp
+                    cd $WORKSPACE/temp
                     go get -u golang.org/x/lint/golint
-                    ${GOPATH}/bin/golint -set_exit_status ${WORKSPACE}/components/operator/...
+                    cd $WORKSPACE
+                    ${GOPATH}/temp/bin/golint -set_exit_status ${WORKSPACE}/components/operator/...
                 ''' 
+                
             }
         }
     }
