@@ -7,6 +7,7 @@ pipeline {
 
     environment {
         GOPATH = "${WORKSPACE}"
+        GOCACHE = "${WORKSPACE}/.gocache"
     }
 
     stages {
@@ -15,7 +16,7 @@ pipeline {
                 sh '''
                     go get -u golang.org/x/lint/golint
                     ${GOPATH}/bin/golint -set_exit_status ${WORKSPACE}/components/operator/...
-                '''  
+                ''' 
             }
         }
     }
