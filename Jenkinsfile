@@ -9,7 +9,8 @@ pipeline {
      environment {
         CGO_ENABLED = '0'
         GO111MODULE = 'on'
-        GOPATH = '/go'  // Adjusted to align with your GitLab pipeline
+        GOPATH = '/go' 
+        GOROOT = '/usr/local/go' // Added this line
         GOLANGCI_LINT_CACHE = '/go/go-cache'
         PATH = "/go/bin:/usr/local/go/bin:${env.PATH}"
     }
