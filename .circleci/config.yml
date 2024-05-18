@@ -70,6 +70,7 @@ jobs:
       - run:
           name: run integration test (pre)
           command: |
+            kubectl config view
             make -C components/operator deploy-local
             make -C tests/operator test
           environment:
