@@ -23,6 +23,7 @@ workflows:
       #- lint
       #- unit-tests
       - pre-integration
+      - gardener-integration-test
       #- post-integration
 jobs:
 #  lint: DONE
@@ -75,6 +76,37 @@ jobs:
             make -C tests/operator test
           environment:
             IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
+
+  gardener-integration-test:
+    docker:
+      - image: cimg/go:1.22.3
+    steps:
+      - checkout
+      - run:
+          name: Set up Go
+          command: sudo go version
+      - run:
+          name: Save SA
+          command: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+      - run:
+          name: Provision Gardener
+          command: make -C hack provision-gardener
+          environment:
+            GARDENER_SECRET_NAME: ${GARDENER_SECRET_NAME}
+            GARDENER_PROJECT: ${GARDENER_PROJECT}
+            GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+      - run:
+          name: Run Test
+          command: |
+            make -C components/operator deploy
+            make -C tests/operator test
+          environment:
+            IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${CIRCLE_SHA1}
+      - run:
+          name: Deprovision Gardener
+          command: make -C hack deprovision-gardener
+          environment:
+            GARDENER_SA_PATH: /tmp/gardener-sa.yaml
 #  post-integration:
 #    executor: go-env
 #    steps:
