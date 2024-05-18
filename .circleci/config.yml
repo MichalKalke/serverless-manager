@@ -98,7 +98,8 @@ jobs:
       - run:
           name: Run Test
           command: |
-            make -C components/operator deploy
+            echo ${GARDENER_SECRET_NAME} && echo ${GARDENER_PROJECT} &&
+            make -C components/operator deploy && cat /tmp/gardener-sa.yaml &&
             make -C tests/operator test
           environment:
             IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${CIRCLE_SHA1}
