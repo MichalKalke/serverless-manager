@@ -111,7 +111,7 @@ jobs:
           make -C components/operator deploy
           make -C tests/operator test
         env:
-          IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
+          IMG: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:0db84d0ac46cd47331cb21b60f66e448001e2595
       - name: deprovision gardener
         if: ${{ always() }}
         run: make -C hack deprovision-gardener
