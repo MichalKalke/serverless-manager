@@ -84,7 +84,7 @@ jobs:
       - checkout
       - run:
           name: Set up Go
-          command: sudo go version
+          command: go version
       - run:
           name: Save SA
           command: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
