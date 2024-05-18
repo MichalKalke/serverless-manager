@@ -11,7 +11,7 @@ executors:
     docker:
       - image: cimg/go:1.22.3
         environment:
-          DOCKER_HOST: tcp://localhost:2375
+          DOCKER_HOST: tcp://localhost:45815
       - image: docker:20.10.7-dind
         command: --privileged   #add this line
         environment:
