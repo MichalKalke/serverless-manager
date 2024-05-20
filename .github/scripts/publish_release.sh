@@ -11,7 +11,7 @@ set -o pipefail # prevents errors in a pipeline from being masked
 RELEASE_ID=$1
 IS_LATEST_RELEASE=$2
 
-REPOSITORY=${REPOSITORY:-kyma-project/serverless-manager}
+REPOSITORY=${REPOSITORY:-MichalKalke/serverless-manager}
 GITHUB_URL=https://api.github.com/repos/${REPOSITORY}
 GITHUB_AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
 
