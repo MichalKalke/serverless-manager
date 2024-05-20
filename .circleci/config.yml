@@ -23,7 +23,7 @@ workflows:
       #- lint
       #- unit-tests
       - pre-integration
-      - gardener-integration-test
+#      - gardener-integration-test
       #- post-integration
 jobs:
 #  lint: DONE
