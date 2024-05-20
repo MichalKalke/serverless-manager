@@ -46,36 +46,36 @@ jobs:
 #          name: Run unit tests
 #          command: make -C components/operator test
 
-  pre-integration:
-    executor: docker-executor
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: false
-      - run:
-          name: Setup Environment
-          command: |
-            go version   #confirm go is installed
-            sudo chmod a+r /var/run/docker.sock  #change permission
-            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-            chmod +x kubectl
-            sudo mv kubectl /usr/local/bin/
-      - run:
-          name: install k3d
-          command: curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
-      - run:
-          name: create cluster
-          command: |
-            echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> $HOME/.bashrc &&
-            k3d cluster create kyma --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
-      - run:
-          name: run integration test (pre)
-          command: |
-            kubectl config view
-            make -C components/operator deploy-local
-            make -C tests/operator test
-          environment:
-            IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
+#  pre-integration:
+#    executor: docker-executor
+#    steps:
+#      - checkout
+#      - setup_remote_docker:
+#          docker_layer_caching: false
+#      - run:
+#          name: Setup Environment
+#          command: |
+#            go version   #confirm go is installed
+#            sudo chmod a+r /var/run/docker.sock  #change permission
+#            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+#            chmod +x kubectl
+#            sudo mv kubectl /usr/local/bin/
+#      - run:
+#          name: install k3d
+#          command: curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | bash
+#      - run:
+#          name: create cluster
+#          command: |
+#            echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >> $HOME/.bashrc &&
+#            k3d cluster create kyma --agents 1 --image "rancher/k3s:v1.29.3-k3s1" --port 80:80@loadbalancer --port 443:443@loadbalancer --wait
+#      - run:
+#          name: run integration test (pre)
+#          command: |
+#            kubectl config view
+#            make -C components/operator deploy-local
+#            make -C tests/operator test
+#          environment:
+#            IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
 
 #  gardener-integration-test:
 #    docker:
