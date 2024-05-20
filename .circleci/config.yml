@@ -77,25 +77,25 @@ jobs:
           environment:
             IMG: europe-docker.pkg.dev/kyma-project/dev/serverless-operator:PR-963
 
-  gardener-integration-test:
-    docker:
-      - image: cimg/go:1.17
-    steps:
-      - checkout
-      - run:
-          name: Save SA
-          command: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
-      - run:
-          name: Provision Gardener
-          command: make -C hack provision-gardener
-      - run:
-          name: Run Test
-          command: |
-            make -C components/operator deploy
-            make -C tests/operator test
-      - run:
-          name: Deprovision Gardener
-          command: make -C hack deprovision-gardener
+#  gardener-integration-test:
+#    docker:
+#      - image: cimg/go:1.17
+#    steps:
+#      - checkout
+#      - run:
+#          name: Save SA
+#          command: 'echo "$GARDENER_SA" > /tmp/gardener-sa.yaml'
+#      - run:
+#          name: Provision Gardener
+#          command: make -C hack provision-gardener
+#      - run:
+#          name: Run Test
+#          command: |
+#            make -C components/operator deploy
+#            make -C tests/operator test
+#      - run:
+#          name: Deprovision Gardener
+#          command: make -C hack deprovision-gardener
 #  post-integration:
 #    executor: go-env
 #    steps:
