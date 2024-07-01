@@ -32,7 +32,7 @@ func TestNodePortAction(t *testing.T) {
 			givenService: fixtureServiceNodePort(dockerRegistryService, kymaNamespace, nonConflictPort),
 			expectedPort: nonConflictPort,
 		},
-		"Return default port new port when nodePort not installed, without port conflict": {
+		"Return default port new port when nodePort not installed test, without port conflict": {
 			expectedPort: dockerRegistryNodePort,
 		},
 		"Generate new port when nodePort not installed, with port conflict": {
