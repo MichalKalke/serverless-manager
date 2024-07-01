@@ -2,6 +2,8 @@ package testsuite
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/kyma-project/serverless/tests/serverless/internal"
 	"github.com/kyma-project/serverless/tests/serverless/internal/assertion"
 	"github.com/kyma-project/serverless/tests/serverless/internal/executor"
@@ -10,7 +12,6 @@ import (
 	"github.com/kyma-project/serverless/tests/serverless/internal/resources/runtimes"
 	"github.com/kyma-project/serverless/tests/serverless/internal/utils"
 	"github.com/pkg/errors"
-	"time"
 
 	serverlessv1alpha2 "github.com/kyma-project/serverless/components/serverless/pkg/apis/serverless/v1alpha2"
 	"github.com/sirupsen/logrus"
@@ -20,9 +21,10 @@ import (
 )
 
 const (
-	nodejs16 = "nodejs16"
-	nodejs18 = "nodejs18"
-	python39 = "python39"
+	nodejs18  = "nodejs18"
+	nodejs20  = "nodejs20"
+	python39  = "python39"
+	python312 = "python312"
 )
 
 func FunctionAPIGatewayTest(restConfig *rest.Config, cfg internal.Config, logf *logrus.Entry) (executor.Step, error) {
@@ -39,9 +41,10 @@ func FunctionAPIGatewayTest(restConfig *rest.Config, cfg internal.Config, logf *
 		return nil, errors.Wrap(err, "while creating k8s CoreV1Client")
 	}
 
+	python312Logger := logf.WithField(runtimeKey, "python312")
 	python39Logger := logf.WithField(runtimeKey, "python39")
-	nodejs16Logger := logf.WithField(runtimeKey, "nodejs16")
 	nodejs18Logger := logf.WithField(runtimeKey, "nodejs18")
+	nodejs20Logger := logf.WithField(runtimeKey, "nodejs20")
 
 	genericContainer := utils.Container{
 		DynamicCli:  dynamicCli,
@@ -53,9 +56,11 @@ func FunctionAPIGatewayTest(restConfig *rest.Config, cfg internal.Config, logf *
 
 	python39Fn := function.NewFunction("python39", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(python39Logger))
 
-	nodejs16Fn := function.NewFunction("nodejs16", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(nodejs16Logger))
+	python312Fn := function.NewFunction("python312", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(python312Logger))
 
 	nodejs18Fn := function.NewFunction("nodejs18", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(nodejs18Logger))
+
+	nodejs20Fn := function.NewFunction("nodejs20", genericContainer.Namespace, cfg.KubectlProxyEnabled, genericContainer.WithLogger(nodejs20Logger))
 
 	logf.Infof("Testing function in namespace: %s", cfg.Namespace)
 
@@ -66,13 +71,17 @@ func FunctionAPIGatewayTest(restConfig *rest.Config, cfg internal.Config, logf *
 				function.CreateFunction(python39Logger, python39Fn, "Create Python39 Function", runtimes.BasicPythonFunction("Hello from python39", serverlessv1alpha2.Python39)),
 				assertion.APIGatewayFunctionCheck("python39", python39Fn, coreCli, genericContainer.Namespace, python39),
 			),
-			executor.NewSerialTestRunner(nodejs16Logger, "NodeJS16 test",
-				function.CreateFunction(nodejs16Logger, nodejs16Fn, "Create NodeJS16 Function", runtimes.BasicNodeJSFunction("Hello from nodejs16", serverlessv1alpha2.NodeJs16)),
-				assertion.APIGatewayFunctionCheck("nodejs16", nodejs16Fn, coreCli, genericContainer.Namespace, nodejs16),
+			executor.NewSerialTestRunner(python312Logger, "Python312 test",
+				function.CreateFunction(python312Logger, python312Fn, "Create Python312 Function", runtimes.BasicPythonFunction("Hello from python312", serverlessv1alpha2.Python312)),
+				assertion.APIGatewayFunctionCheck("python312", python312Fn, coreCli, genericContainer.Namespace, python312),
 			),
 			executor.NewSerialTestRunner(nodejs18Logger, "NodeJS18 test",
 				function.CreateFunction(nodejs18Logger, nodejs18Fn, "Create NodeJS18 Function", runtimes.BasicNodeJSFunction("Hello from nodejs18", serverlessv1alpha2.NodeJs18)),
 				assertion.APIGatewayFunctionCheck("nodejs18", nodejs18Fn, coreCli, genericContainer.Namespace, nodejs18),
+			),
+			executor.NewSerialTestRunner(nodejs20Logger, "NodeJS20 test",
+				function.CreateFunction(nodejs20Logger, nodejs20Fn, "Create NodeJS20 Function", runtimes.BasicNodeJSFunction("Hello from nodejs20", serverlessv1alpha2.NodeJs20)),
+				assertion.APIGatewayFunctionCheck("nodejs20", nodejs20Fn, coreCli, genericContainer.Namespace, nodejs20),
 			),
 		),
 	), nil

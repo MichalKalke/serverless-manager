@@ -54,9 +54,11 @@ global:
   commonLabels:
     app: '{{ template "name" . }}'
     version: "{{ .Values.global.images.function_controller.version }}"
+    kyma-project.io/module: '{{ template "name" . }}'
     app.kubernetes.io/name: '{{ template "name" . }}'
-    app.kubernetes.io/instance: "{{ .Release.Name }}"
     app.kubernetes.io/version: "{{ .Values.global.images.function_controller.version }}"
+    app.kubernetes.io/part-of: '{{ template "name" . }}'
+    app.kubernetes.io/managed-by: "Helm"
     helm.sh/chart: '{{ include "chart" . }}'
   registryServicePort: 5000
   registryNodePort: 32137
@@ -69,29 +71,31 @@ global:
     domainName:
   containerRegistry:
     path: europe-docker.pkg.dev/kyma-project
+  tpiContainerRegistry:
+    path: europe-docker.pkg.dev/kyma-project
   images:
     function_controller:
       name: "function-controller"
-      version: "main"
-      directory: "prod"
-    function_webhook:
-      name: "function-webhook"
       version: "main"
       directory: "prod"
     function_build_init:
       name: "function-build-init"
       version: "main"
       directory: "prod"
-    function_runtime_nodejs16:
-      name: "function-runtime-nodejs16"
-      version: "main"
-      directory: "prod"
     function_runtime_nodejs18:
       name: "function-runtime-nodejs18"
       version: "main"
       directory: "prod"
+    function_runtime_nodejs20:
+      name: "function-runtime-nodejs20"
+      version: "main"
+      directory: "prod"
     function_runtime_python39:
       name: "function-runtime-python39"
+      version: "main"
+      directory: "prod"
+    function_runtime_python312:
+      name: "function-runtime-python312"
       version: "main"
       directory: "prod"
     kaniko_executor:
@@ -178,7 +182,6 @@ containers:
         configMapRequeueDuration: 5m
         secretRequeueDuration: 5m
         serviceAccountRequeueDuration: 5m
-        imageRegistryExternalDockerConfigSecretName: '{{ template "fullname" . }}-registry-config'
         imageRegistryDefaultDockerConfigSecretName: '{{ template "fullname" . }}-registry-config-default'
         packageRegistryConfigSecretName: '{{ template "fullname" . }}-package-registry-config'
         imagePullAccountName: '{{ template "fullname" . }}-function'
@@ -227,7 +230,7 @@ containers:
             resources:
               minRequestCpu: "200m"
               minRequestMemory: "200Mi"
-              defaultPreset: "fast"
+              defaultPreset: "normal"
               presets:
                 local-dev:
                   requestCpu: "200m"
@@ -240,12 +243,12 @@ containers:
                   limitCpu: "700m"
                   limitMemory: "700Mi"
                 normal:
-                  requestCpu: "700m"
+                  requestCpu: "500m"
                   requestMemory: "700Mi"
                   limitCpu: "1100m"
                   limitMemory: "1100Mi"
                 fast:
-                  requestCpu: "1100m"
+                  requestCpu: "900m"
                   requestMemory: "1100Mi"
                   limitCpu: "1700m"
                   limitMemory: "1100Mi"

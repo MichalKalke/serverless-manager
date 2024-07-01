@@ -1,13 +1,17 @@
 # Serverless
 
 ## Status
-![GitHub tag checks state](https://img.shields.io/github/checks-status/kyma-project/serverless-manager/main?label=serverless-operator&link=https%3A%2F%2Fgithub.com%2Fkyma-project%2Fserverless-manager%2Fcommits%2Fmain)
-[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/serverless-manager)](https://api.reuse.software/info/github.com/kyma-project/serverless-manager)
+![GitHub tag checks state](https://img.shields.io/github/checks-status/kyma-project/serverless/main?label=serverless-operator&link=https%3A%2F%2Fgithub.com%2Fkyma-project%2Fserverless%2Fcommits%2Fmain)
+<!-- markdown-link-check-disable-next-line -->
+[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/serverless)](https://api.reuse.software/info/github.com/kyma-project/serverless)
 
 
 ## Overview
 
-Serverless Operator allows deploying the [Serverless](https://kyma-project.io/docs/kyma/latest/01-overview/serverless/) component on the Kyma cluster in compatibility with [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager).
+Serverless Operator allows deploying the [Serverless](https://kyma-project.io/docs/kyma/latest/01-overview/serverless/) component in the Kyma cluster in compatibility with [Lifecycle Manager](https://github.com/kyma-project/lifecycle-manager).
+
+### Architecture Diagram
+![Architecture](./architecture.svg)
 
 ## Install
 
@@ -20,13 +24,13 @@ kubectl create namespace kyma-system
 Apply the following script to install Serverless Operator:
 
 ```bash
-kubectl apply -f https://github.com/kyma-project/serverless-manager/releases/latest/download/serverless-operator.yaml
+kubectl apply -f https://github.com/kyma-project/serverless/releases/latest/download/serverless-operator.yaml
 ```
 
 To get Serverless installed, apply the sample Serverless CR:
 
 ```bash
-kubectl apply -f https://github.com/kyma-project/serverless-manager/releases/latest/download/default-serverless-cr.yaml
+kubectl apply -f https://github.com/kyma-project/serverless/releases/latest/download/default-serverless-cr.yaml
 ```
 
 ## Development
@@ -39,10 +43,10 @@ kubectl apply -f https://github.com/kyma-project/serverless-manager/releases/lat
 - [Docker](https://www.docker.com/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Kubebuilder](https://book.kubebuilder.io/)
+- [yq](https://mikefarah.gitbook.io/yq)
 
 
-<!-- TODO: update this section - now it doesn't work -->
-## Manual Installation Using Make Targets
+## Installation in the k3d Cluster Using Make Targets
 
 1. Clone the project.
 
@@ -50,47 +54,15 @@ kubectl apply -f https://github.com/kyma-project/serverless-manager/releases/lat
     git clone https://github.com/kyma-project/serverless.git && cd serverless/
     ```
 
-2. Set the Serverless Operator image name.
+2. Create a new k3d cluster and run Serverless from the main branch:
 
     ```bash
-    export IMG=<DOCKER_USERNAME>/custom-serverless-operator:0.0.1
+    make run-main
     ```
 
-3. Verify the compability.
+> **NOTE:** To clean up the k3d cluster, use the `make delete-k3d` make target.
 
-    ```bash
-    make test
-    ```
-
-4. Build and push the image to the registry.
-
-    ```bash
-    make module-image-release
-    ```
-
-5. Deploy Serverless Operator.
-
-    ```bash
-    make deploy
-    ```
-
-<!-- TODO: update this section - now we don't use lifecycle manager -->
-### Test Integration with Lifecycle Manager on the k3d Cluster
-
-1. Clone the project.
-
-    ```bash
-    git clone https://github.com/kyma-project/serverless-manager.git && cd serverless-manager/
-    ```
-
-2. Build Serverless Operator locally and run it on the k3d cluster.
-
-    ```bash
-    make -C hack/local run
-    ```
-
-> **NOTE:** To clean up the k3d cluster, use the `make -C hack/local stop` make target.
-
+> **NOTE:** If you have k3d already running, you can use the `install-*` targets to install Serverless in different flavors.
 
 ## Using Serverless Operator
 

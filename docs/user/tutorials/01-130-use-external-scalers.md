@@ -27,7 +27,7 @@ Follow these steps:
     metadata:
       name: scaled-function
     spec:
-      runtime: nodejs18
+      runtime: nodejs20
       replicas: 1
       source:
         inline:
@@ -71,7 +71,7 @@ Follow these steps:
     metadata:
       name: scaled-function
     spec:
-      runtime: nodejs18
+      runtime: nodejs20
       replicas: 1
       source:
         inline:
@@ -135,7 +135,7 @@ Follow these steps:
     metadata:
       name: scaled-function
     spec:
-      runtime: nodejs18
+      runtime: nodejs20
       replicas: 1
       source:
         inline:
@@ -190,6 +190,6 @@ Follow these steps:
     scaled-function   serverless.kyma-project.io/v1alpha2.Function   scaled-function   1     5     prometheus                    True    True     Unknown      4m15s
     ```
 
-Check out this [example](https://github.com/kyma-project/keda-manager/tree/main/examples/scale-to-zero-with-keda) to see how to use Kyma Serverless and Eventing in combination with Keda to accomplish scaling to zero. 
+Check out this [example](https://github.com/kyma-project/keda-manager/tree/main/examples/scale-to-zero-with-keda) to see how to use Kyma Serverless and Eventing in combination with Keda to accomplish scaling to zero.
 
 <!-- tabs:end -->

@@ -7,7 +7,7 @@ It's based on a simple Function in Python 3.9. The Function reads data from Secr
 
 Before you start, make sure you have these tools installed:
 
-- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) on a cluster
+- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) in a cluster
 
 ## Steps
 
@@ -31,7 +31,7 @@ Follow these steps:
     kubectl -n $NAMESPACE create secret generic $SECRET_NAME \
         --from-literal=$SECRET_DATA_KEY={SECRET_DATA_VALUE}
     ```
-   
+
 3. Create your Function with `secretMounts`:
 
     ```bash
@@ -42,7 +42,7 @@ Follow these steps:
       name: $FUNCTION_NAME
       namespace: $NAMESPACE
     spec:
-      runtime: python39
+      runtime: python312
       source:
         inline:
           source: |
@@ -106,16 +106,18 @@ Follow these steps:
 6. Next steps:
 
     Now you can edit the Secret and see if the Function returns the new value from the Secret.
-    
+
     To edit your Secret, use:
+
     ```bash
     kubectl -n $NAMESPACE edit secret $SECRET_NAME
     ```
-   
+
     To encode values used in `data` from the Secret, use `base64`, for example:
+
     ```bash
     echo -n '{NEW_SECRET_DATA_VALUE}' | base64
     ```
 
-    Calling the Function again (using `curl`) must return `{NEW_SECRET_DATA_VALUE}`. 
+    Calling the Function again (using `curl`) must return `{NEW_SECRET_DATA_VALUE}`.
     Note that the Secret propagation may take some time, and the call may initially return the old value.

@@ -28,7 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -105,15 +107,23 @@ func main() {
 
 	logWithCtx.Info("Initializing controller manager")
 	mgr, err := manager.New(restConfig, manager.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     config.MetricsAddress,
-		LeaderElection:         config.LeaderElectionEnabled,
-		LeaderElectionID:       config.LeaderElectionID,
-		Port:                   config.SecretMutatingWebhookPort,
+		Scheme: scheme,
+		Metrics: ctrlmetrics.Options{
+			BindAddress: config.MetricsAddress,
+		},
+		LeaderElection:   config.LeaderElectionEnabled,
+		LeaderElectionID: config.LeaderElectionID,
+		WebhookServer: ctrlwebhook.NewServer(ctrlwebhook.Options{
+			Port: config.SecretMutatingWebhookPort,
+		}),
 		HealthProbeBindAddress: config.Healthz.Address,
-		ClientDisableCacheFor: []ctrlclient.Object{
-			&corev1.Secret{},
-			&corev1.ConfigMap{},
+		Client: ctrlclient.Options{
+			Cache: &ctrlclient.CacheOptions{
+				DisableFor: []ctrlclient.Object{
+					&corev1.Secret{},
+					&corev1.ConfigMap{},
+				},
+			},
 		},
 	})
 	if err != nil {

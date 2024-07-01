@@ -11,14 +11,19 @@ See sample Functions for all available runtimes:
 
 #### **Node.js**
 
+Serverless supports both CommonJS (cjs) and ECMAScript (ESM) syntax supported by Node.js.
+You can switch between them using the `type` property in the Function dependencies.
+
+CommonJS example:
+
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: serverless.kyma-project.io/v1alpha2
 kind: Function
 metadata:
-  name: test-function-nodejs
+  name: test-function-nodejs-cjs
 spec:
-  runtime: nodejs18
+  runtime: nodejs20
   source:
     inline:
       dependencies: |
@@ -33,8 +38,37 @@ spec:
         const _ = require('lodash')
         module.exports = {
           main: function(event, context) {
-            return _.kebabCase('Hello World from Node.js 16 Function');
+            return _.kebabCase('Hello World from Node.js 20 Function');
           }
+        }
+EOF
+```
+
+ECMAScript example:
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: serverless.kyma-project.io/v1alpha2
+kind: Function
+metadata:
+  name: test-function-nodejs-esm
+spec:
+  runtime: nodejs20
+  source:
+    inline:
+      dependencies: |
+        {
+          "name": "test-function-nodejs-esm",
+          "version": "1.0.0",
+          "type": "module",
+          "dependencies": {
+            "lodash":"^4.17.20"
+          }
+        }
+      source: |
+        import _ from 'lodash'
+        export function main (event, context) {
+            return _.kebabCase('Hello World from Node.js 20 Function');
         }
 EOF
 ```
@@ -46,9 +80,9 @@ cat <<EOF | kubectl apply -f -
 apiVersion: serverless.kyma-project.io/v1alpha2
 kind: Function
 metadata:
-  name: test-function-python39
+  name: test-function-python312
 spec:
-  runtime: python39
+  runtime: python312
   source:
     inline:
       dependencies: |

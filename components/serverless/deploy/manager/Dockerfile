@@ -1,4 +1,4 @@
-FROM golang:1.21.6-alpine3.19 as builder
+FROM golang:1.22.4-alpine3.20 as builder
 
 ENV BASE_APP_DIR=/workspace/go/src/github.com/kyma-project/serverless \
     CGO_ENABLED=1 \
@@ -20,11 +20,11 @@ RUN go build -ldflags "-s -w" -a -o manager ./components/serverless/cmd/manager/
     && mkdir /app \
     && mv ./manager /app/manager
 
-FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.19.1 as certs
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.20.0 as certs
 
 RUN apk add --no-cache ca-certificates
 
-FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.19.1
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.20.0
 
 ENV LIBGIT2_VERSION=1.5.2-r0
 
@@ -32,7 +32,7 @@ RUN apk update --no-cache && apk upgrade --no-cache
 RUN apk add --no-cache --update --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main openssl
 RUN apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.18/community libgit2=${LIBGIT2_VERSION}
 
-LABEL source = git@github.com:kyma-project/kyma.git
+LABEL source = git@github.com:kyma-project/serverless.git
 
 COPY --from=builder /app /app
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

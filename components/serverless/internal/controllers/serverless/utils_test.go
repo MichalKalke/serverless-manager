@@ -1,20 +1,23 @@
 package serverless
 
 import (
+	"testing"
+
 	serverlessv1alpha2 "github.com/kyma-project/serverless/components/serverless/pkg/apis/serverless/v1alpha2"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func Test_calculateGitImageTag(t *testing.T) {
 	tests := []struct {
-		name string
-		fn   *serverlessv1alpha2.Function
-		want string
+		name      string
+		fn        *serverlessv1alpha2.Function
+		baseImage string
+		want      string
 	}{
 		{
-			name: "should use runtime",
+			name:      "should use runtime",
+			baseImage: "nodejs18:test",
 			fn: &serverlessv1alpha2.Function{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: "fn-uuid",
@@ -26,13 +29,14 @@ func Test_calculateGitImageTag(t *testing.T) {
 							Dependencies: "",
 						},
 					},
-					Runtime: "nodejs16",
+					Runtime: "nodejs20",
 				},
 			},
-			want: "5e75a855ada0eb1fc5534e42387566508e03a1ef0d927ac281d5248a0ef1d0cc",
+			want: "5093e1e9a1b0c94c513bbec23b8291240ba988872353a024d1b0d5b2901d421c",
 		},
 		{
-			name: "should use runtimeOverride",
+			name:      "should use runtimeOverride",
+			baseImage: "nodejs18:test",
 			fn: &serverlessv1alpha2.Function{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: "fn-uuid",
@@ -44,14 +48,15 @@ func Test_calculateGitImageTag(t *testing.T) {
 							Dependencies: "",
 						},
 					},
-					Runtime:              "nodejs16",
-					RuntimeImageOverride: "nodejs18",
+					Runtime:              "nodejs18",
+					RuntimeImageOverride: "nodejs20",
 				},
 			},
-			want: "4480d14ea252bf15f18c6632caff283b55beb6f38d5cf8cc43b1b116a151e78d",
+			want: "5093e1e9a1b0c94c513bbec23b8291240ba988872353a024d1b0d5b2901d421c",
 		},
 		{
-			name: "should use runtime when runtimeOverride is empty",
+			name:      "should use runtime when runtimeOverride is empty",
+			baseImage: "nodejs18:test",
 			fn: &serverlessv1alpha2.Function{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: "fn-uuid",
@@ -63,28 +68,30 @@ func Test_calculateGitImageTag(t *testing.T) {
 							Dependencies: "",
 						},
 					},
-					Runtime:              "nodejs16",
+					Runtime:              "nodejs20",
 					RuntimeImageOverride: "",
 				},
 			},
-			want: "5e75a855ada0eb1fc5534e42387566508e03a1ef0d927ac281d5248a0ef1d0cc",
+			want: "5093e1e9a1b0c94c513bbec23b8291240ba988872353a024d1b0d5b2901d421c",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, calculateGitImageTag(tt.fn))
+			assert.Equal(t, tt.want, calculateGitImageTag(tt.fn, tt.baseImage))
 		})
 	}
 }
 
 func Test_calculateInlineImageTag(t *testing.T) {
 	tests := []struct {
-		name string
-		fn   *serverlessv1alpha2.Function
-		want string
+		name      string
+		fn        *serverlessv1alpha2.Function
+		baseImage string
+		want      string
 	}{
 		{
-			name: "should use runtime",
+			name:      "should use runtime",
+			baseImage: "nodejs18:test",
 			fn: &serverlessv1alpha2.Function{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: "fn-uuid",
@@ -96,7 +103,7 @@ func Test_calculateInlineImageTag(t *testing.T) {
 							Dependencies: "",
 						},
 					},
-					Runtime: "nodejs16",
+					Runtime: "nodejs20",
 				},
 				Status: serverlessv1alpha2.FunctionStatus{
 					Commit: "commit",
@@ -105,10 +112,11 @@ func Test_calculateInlineImageTag(t *testing.T) {
 					},
 				},
 			},
-			want: "61373f52b742aec1e1be9b8b6a9984ea087524deffe6bb38f1788c0ae4d7d62b",
+			want: "3773f4e6b48ccb71c2a43f4a7cbbeb98333701d823d8ff5917d8f7373c7abbcd",
 		},
 		{
-			name: "should use runtimeOverride",
+			name:      "should use runtimeOverride",
+			baseImage: "nodejs18:test",
 			fn: &serverlessv1alpha2.Function{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: "fn-uuid",
@@ -120,8 +128,8 @@ func Test_calculateInlineImageTag(t *testing.T) {
 							Dependencies: "",
 						},
 					},
-					Runtime:              "nodejs16",
-					RuntimeImageOverride: "nodejs18",
+					Runtime:              "nodejs18",
+					RuntimeImageOverride: "nodejs20",
 				},
 				Status: serverlessv1alpha2.FunctionStatus{
 					Commit: "commit",
@@ -130,10 +138,11 @@ func Test_calculateInlineImageTag(t *testing.T) {
 					},
 				},
 			},
-			want: "e6ca45293444d4f6f1b43437f96cd2606842bf7cf9e14a126f52c0b7c216c677",
+			want: "3773f4e6b48ccb71c2a43f4a7cbbeb98333701d823d8ff5917d8f7373c7abbcd",
 		},
 		{
-			name: "should use runtime instead of runtimeOverride",
+			name:      "should use runtime instead of runtimeOverride",
+			baseImage: "nodejs18:test",
 			fn: &serverlessv1alpha2.Function{
 				ObjectMeta: metav1.ObjectMeta{
 					UID: "fn-uuid",
@@ -145,7 +154,7 @@ func Test_calculateInlineImageTag(t *testing.T) {
 							Dependencies: "",
 						},
 					},
-					Runtime:              "nodejs16",
+					Runtime:              "nodejs20",
 					RuntimeImageOverride: "",
 				},
 				Status: serverlessv1alpha2.FunctionStatus{
@@ -155,12 +164,12 @@ func Test_calculateInlineImageTag(t *testing.T) {
 					},
 				},
 			},
-			want: "61373f52b742aec1e1be9b8b6a9984ea087524deffe6bb38f1788c0ae4d7d62b",
+			want: "3773f4e6b48ccb71c2a43f4a7cbbeb98333701d823d8ff5917d8f7373c7abbcd",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, calculateInlineImageTag(tt.fn))
+			assert.Equal(t, tt.want, calculateInlineImageTag(tt.fn, tt.baseImage))
 		})
 	}
 }

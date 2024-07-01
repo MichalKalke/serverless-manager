@@ -9,7 +9,7 @@ This tutorial shows how to use the available CLI commands to manage Functions in
 > [!NOTE]
 > Read about [Istio sidecars in Kyma and why you want them](https://kyma-project.io/docs/kyma/latest/01-overview/service-mesh/smsh-03-istio-sidecars-in-kyma/). Then, check how to [enable automatic Istio sidecar proxy injection](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/smsh-01-istio-enable-sidecar-injection/). For more details, see [Default Istio setup in Kyma](https://kyma-project.io/docs/kyma/latest/01-overview/service-mesh/smsh-02-default-istio-setup-in-kyma/).
 
-This tutorial is based on a sample Python Function run on a lightweight [k3d](https://k3d.io/) cluster.
+This tutorial is based on a sample Python Function run in a lightweight [k3d](https://k3d.io/) cluster.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ Before you start, make sure you have these tools installed:
 
 - [Docker](https://www.docker.com/)
 - [Kyma CLI](https://github.com/kyma-project/cli)
-- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) locally or on a cluster
+- [Serverless module installed](https://kyma-project.io/docs/kyma/latest/04-operation-guides/operations/08-install-uninstall-upgrade-kyma-module/) locally or in a cluster
 
 ## Steps
 
@@ -26,7 +26,7 @@ Follow these steps:
 1. To create local files with the default configuration for a Python Function, go to the folder in which you want to initiate the workspace content and run the `init` Kyma CLI command:
 
   ```bash
-  kyma init function --runtime python39 --name {FUNCTION_NAME}
+  kyma init function --runtime python312 --name {FUNCTION_NAME}
   ```
 
   You can also use the `--dir {FULL_FOLDER_PATH}` flag to point to the directory where you want to create the Function's source files.
@@ -36,7 +36,7 @@ Follow these steps:
 
   The `init` command creates these files in your workspace folder:
 
-  - `config.yaml`	with the Function's configuration
+  - `config.yaml` with the Function's configuration
 
    > [!NOTE]
    > See the detailed description of all fields available in the [`config.yaml` file](../technical-reference/07-60-function-configuration-file.md).
@@ -49,7 +49,7 @@ Follow these steps:
   ```yaml
   name: my-function
   namespace: default
-  runtime: python39
+  runtime: python312
   source:
       sourceType: inline
       sourcePath: {FULL_PATH_TO_WORKSPACE_FOLDER}
@@ -66,13 +66,13 @@ Follow these steps:
 
   Alternatively, use the `--dry-run` flag to list the file that will be created before you apply it. You can also preview the file's content in the format of your choice by adding the `--output {FILE_FORMAT}` flag, such as `--output yaml`.
 
-3. Once applied, view the Function's details on the cluster:
+3. Once applied, view the Function's details in the cluster:
 
   ```bash
   kubectl describe function {FUNCTION_NAME}
   ```
 
-4. Change the Function's source code on the cluster to return "Hello Serverless!":
+4. Change the Function's source code in the cluster to return "Hello Serverless!":
 
   a) Edit the Function:
 
@@ -85,7 +85,7 @@ Follow these steps:
   ```yaml
   ...
   spec:
-    runtime: python39
+    runtime: python312
     source: |-
       def main(event, context):
           return "Hello Serverless!"

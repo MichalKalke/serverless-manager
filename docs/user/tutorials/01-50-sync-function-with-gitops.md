@@ -1,6 +1,6 @@
 # Synchronize Git Resources with the Cluster Using a Gitops Operator
 
-This tutorial shows how you can automate the deployment of local Kyma resources on a cluster using the GitOps logic. You will use [Kyma CLI](https://github.com/kyma-project/cli) to create an inline Python Function. You will later push the resource to a GitHub repository of your choice and set up a GitOps operator to monitor the given repository folder and synchronize any changes in it with your cluster. For the purpose of this tutorial, you will install and use the [Flux](https://fluxcd.io/flux/get-started/) GitOps operator and a lightweight [k3d](https://k3d.io/) cluster.
+This tutorial shows how you can automate the deployment of local Kyma resources in a cluster using the GitOps logic. You will use [Kyma CLI](https://github.com/kyma-project/cli) to create an inline Python Function. You will later push the resource to a GitHub repository of your choice and set up a GitOps operator to monitor the given repository folder and synchronize any changes in it with your cluster. For the purpose of this tutorial, you will install and use the [Flux](https://fluxcd.io/flux/get-started/) GitOps operator and a lightweight [k3d](https://k3d.io/) cluster.
 
 > [!TIP]
 > Although this tutorial uses Flux to synchronize Git resources with the cluster, you can use an alternative GitOps operator for this purpose, such as [Argo](https://argoproj.github.io/argo-cd/).
@@ -39,11 +39,12 @@ These sections will lead you through the whole installation, configuration, and 
   kubectl cluster-info
   ```
 
-3. Apply the `functions.serverless.kyma-project.io` CRD from sources in the [`serverless`](https://github.com/kyma-project/serverless/tree/main/components/serverless/config/crd) repository. You will need it to create the Function CR on the cluster.
+3. Apply the `functions.serverless.kyma-project.io` CRD from sources in the [`serverless`](https://github.com/kyma-project/serverless/tree/main/components/serverless/config/crd) repository. You will need it to create the Function CR in the cluster.
 
   ```bash
   kubectl apply -f https://raw.githubusercontent.com/kyma-project/serverless/main/components/serverless/config/crd/bases/serverless.kyma-project.io_functions.yaml
   ```
+
 4. Run this command to make sure the CRs are applied:
 
   ```bash
@@ -61,7 +62,7 @@ These sections will lead you through the whole installation, configuration, and 
 2. Use the `init` Kyma CLI command to create a local workspace with default configuration for a Python Function:
 
   ```bash
-  kyma init function --runtime python39 --dir $PWD/{WORKSPACE_FOLDER}
+  kyma init function --runtime python312 --dir $PWD/{WORKSPACE_FOLDER}
   ```
 
   > [!TIP]
@@ -69,7 +70,7 @@ These sections will lead you through the whole installation, configuration, and 
 
   This command will download the following files to your workspace folder:
 
-  - `config.yaml`	with the Function's configuration
+  - `config.yaml` with the Function's configuration
   - `handler.py` with the Function's code and the simple "Hello World" logic
   - `requirements.txt` with an empty file for your Function's custom dependencies
 
@@ -170,6 +171,7 @@ In this section, you will create a sample inline Function.
   ```bash
   git clone https://github.com/${GH_USER}/${GH_REPO}.git
   ```
+
   > [!NOTE]
   > You can also clone the repository using SSH. To do that, you need to [generate a new SSH key and add it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
 
@@ -212,8 +214,9 @@ In this section, you will create a sample inline Function.
   ```bash
   kubectl get functions
   ```
+
 You can see that Flux synchronized the resource and the new Function CR was added to your cluster.
 
 ## Reverting Feature
 
-Once you set it up, Flux will keep monitoring the given Git repository folder for any changes. If you modify the existing resources directly on the cluster, Flux will automatically revert these changes and update the given resource back to its version on the `main` branch of the Git repository.  
+Once you set it up, Flux will keep monitoring the given Git repository folder for any changes. If you modify the existing resources directly in the cluster, Flux will automatically revert these changes and update the given resource back to its version on the `main` branch of the Git repository.  

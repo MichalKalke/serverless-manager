@@ -7,7 +7,7 @@ Function's resources and replicas as well as resources for image-building Jobs a
 
 ## Usage
 
-If you want to apply values from a preset to a single Function, override the existing values for a given preset in the Function CR: First, remove the relevant fields from the Function CR and then, add the relevant preset labels. 
+If you want to apply values from a preset to a single Function, override the existing values for a given preset in the Function CR: First, remove the relevant fields from the Function CR and then, add the relevant preset labels.
 
 For example, to modify the default values for **buildResources**, remove all its entries from the Function CR and add an appropriate **serverless.kyma-project.io/build-resources-preset: {PRESET}** label to the Function CR.
 
@@ -29,7 +29,7 @@ To apply values ​​from a given preset, use the **serverless.kyma-project.io/
 | - | - | - | - | - |
 | `local-dev` | `200m` | `200Mi` | `400m` | `400Mi` |
 | `slow` | `200m` | `200Mi` | `700m` | `700Mi` |
-| `normal` | `700m` | `700Mi` | `1100m` | `1100Mi`|
-| `fast` | `1100m` | `1100Mi` | `1700m` | `1100Mi`|
+| `normal` | `500m` | `700Mi` | `1100m` | `1100Mi`|
+| `fast` | `900m` | `1100Mi` | `1700m` | `1100Mi`|
 
 To apply values ​​from a given preset, use the **serverless.kyma-project.io/build-resources-preset: {PRESET}** label in the Function CR.

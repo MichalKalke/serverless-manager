@@ -61,8 +61,9 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "..", "..", "config", "operator", "crd", "bases"),
+			filepath.Join("..", "..", "..", "config", "operator", "base", "crd", "bases"),
 		},
+		BinaryAssetsDirectory: filepath.Join("..", "..", "..", "..", "..", "bin", "k8s", "kubebuilder_assets"),
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -96,9 +97,8 @@ var _ = BeforeSuite(func() {
 		k8sManager.GetConfig(),
 		record.NewFakeRecorder(100),
 		reconcilerLogger.Sugar(),
-		chartPath,
-		"",
-	)).SetupWithManager(k8sManager)
+		chartPath)).
+		SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

@@ -1,4 +1,4 @@
-FROM golang:1.21.6-alpine3.19 as builder
+FROM golang:1.22.4-alpine3.20 as builder
 
 ENV BASE_APP_DIR=/workspace/go/src/github.com/kyma-project/serverless \
     CGO_ENABLED=1 \
@@ -20,10 +20,10 @@ RUN go build -ldflags "-s -w" -a -o jobinit ./components/serverless/cmd/jobinit/
     && mkdir /app \
     && mv ./jobinit /app/jobinit
 
-FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.19.1
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.20.0
 ENV LIBGIT2_VERSION=1.5.2-r0
 
-LABEL source = git@github.com:kyma-project/kyma.git
+LABEL source = git@github.com:kyma-project/serverless.git
 
 RUN apk update --no-cache && apk upgrade --no-cache
 RUN apk add --no-cache ca-certificates

@@ -38,12 +38,15 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1alpha1 "github.com/kyma-project/serverless/components/operator/api/v1alpha1"
 	"github.com/kyma-project/serverless/components/operator/controllers"
+	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -88,7 +91,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), cleanupTimeout)
 	defer cancel()
 
-	setupLog.Info("cleaning orphan depricated resources")
+	setupLog.Info("cleaning orphan deprecated resources")
 	err = cleanupOrphanDeprecatedResources(ctx)
 	if err != nil {
 		setupLog.Error(err, "while removing orphan resources")
@@ -96,14 +99,24 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: ctrlmetrics.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: ctrlwebhook.NewServer(ctrlwebhook.Options{
+			Port: 9443,
+		}),
 		HealthProbeBindAddress: probeAddr,
-		SyncPeriod:             &syncPeriod,
-		ClientDisableCacheFor: []ctrlclient.Object{
-			&corev1.Secret{},
-			&corev1.ConfigMap{},
+		Cache: ctrlcache.Options{
+			SyncPeriod: &syncPeriod,
+		},
+		Client: ctrlclient.Options{
+			Cache: &ctrlclient.CacheOptions{
+				DisableFor: []ctrlclient.Object{
+					&corev1.Secret{},
+					&corev1.ConfigMap{},
+				},
+			},
 		},
 		// TODO: use our own logger - now eventing use logger with different message format
 	})
@@ -127,8 +140,7 @@ func main() {
 		mgr.GetClient(), mgr.GetConfig(),
 		mgr.GetEventRecorderFor("serverless-operator"),
 		reconcilerLogger.Sugar(),
-		cfg.ChartPath,
-		cfg.ServerlessManagerNamespace)
+		cfg.ChartPath)
 
 	if err = reconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Serverless")

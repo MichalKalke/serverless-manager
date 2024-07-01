@@ -1,5 +1,5 @@
-# image builder base on golang:1.21.4-alpine3.18
-FROM golang@sha256:f475434ea2047a83e9ba02a1da8efc250fa6b2ed0e9e8e4eb8c5322ea6997795 as builder
+# image builder base on golang:1.22.3-alpine3.20
+FROM golang@sha256:e62cde42bd32f7b0435c997d4048ee7b76042e31bde380898e1df97eabdb01fd as builder
 
 ENV BASE_APP_DIR=/workspace/go/src/github.com/kyma-project/serverless \
     CGO_ENABLED=0 \
@@ -17,12 +17,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o webhook-server ./compon
 && mv ./webhook-server /app/webhook-server
 
 # get latest CA certs from alpine:3.17.4
-FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine@sha256:e95676db9e4a4f16f6cc01a8915368f82b018cc07aba951c1bd1db586c081388 as certs
+FROM europe-docker.pkg.dev/kyma-project/prod/external/alpine:3.20.0 as certs
 RUN apk add --no-cache ca-certificates
 
 FROM scratch
 
-LABEL source = git@github.com:kyma-project/kyma.git
+LABEL source = git@github.com:kyma-project/serverless.git
 
 COPY --from=builder /app /app
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

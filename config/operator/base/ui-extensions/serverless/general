@@ -1,0 +1,15 @@
+resource:
+  kind: Serverless
+  group: operator.kyma-project.io
+  version: v1alpha1
+urlPath: serverlesses
+category: Kyma
+name: Serverless
+scope: namespace
+features:
+  actions:
+    disableCreate: true
+    disableDelete: true
+description: >-
+  {{[Serverless custom resource](https://kyma-project.io/#/serverless-manager/user/resources/06-20-serverless-cr)}}
+  configures the Serverless module.
