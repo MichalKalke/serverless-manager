@@ -277,7 +277,7 @@ func (d *Deployment) envs() []corev1.EnvVar {
 		{
 			//TODO: Add it for tracing
 			Name:  "SERVICE_NAMESPACE",
-			Value: d.Namespace,
+			Value: d.function.Namespace,
 		},
 		{
 			Name:  "FUNC_HANDLER_SOURCE",
