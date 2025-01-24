@@ -127,7 +127,8 @@ func (d *Deployment) podSpec() corev1.PodSpec {
 					TimeoutSeconds:   4,
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: ptr.To[int64](0),
+					RunAsUser:  ptr.To[int64](10001),
+					RunAsGroup: ptr.To[int64](10001),
 				},
 			},
 		},

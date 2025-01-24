@@ -3,17 +3,18 @@ package state
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	serverlessv1alpha2 "github.com/kyma-project/serverless/api/v1alpha2"
 	"github.com/kyma-project/serverless/internal/controller/fsm"
 	"github.com/kyma-project/serverless/internal/controller/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
 )
 
 //TODO: Add states:
@@ -117,9 +118,6 @@ func deploymentChanged(a *appsv1.Deployment, b *appsv1.Deployment) bool {
 	envChanged := !reflect.DeepEqual(aContainer.Env, bContainer.Env)
 	//volumeMountsChanged := !reflect.DeepEqual(aContainer.VolumeMounts, bContainer.VolumeMounts)
 	portsChanged := !reflect.DeepEqual(aContainer.Ports, bContainer.Ports)
-	fmt.Sprintf("%+v \n", aContainer.Ports)
-	fmt.Sprintf("%+v \n", bContainer.Ports)
-	fmt.Println("chamski printlajn")
 
 	return imageChanged ||
 		labelsChanged ||
