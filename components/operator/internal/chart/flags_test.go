@@ -39,6 +39,12 @@ func Test_flagsBuilder_Build(t *testing.T) {
 							},
 						},
 					},
+					"logConfiguration": map[string]interface{}{
+						"data": map[string]interface{}{
+							"logLevel":  "testLogLevel",
+							"logFormat": "testLogFormat",
+						},
+					},
 				},
 			},
 			"docker-registry": map[string]interface{}{
@@ -53,6 +59,9 @@ func Test_flagsBuilder_Build(t *testing.T) {
 				"username":        "testUsername",
 			},
 			"global": map[string]interface{}{
+				"commonLabels": map[string]interface{}{
+					"app.kubernetes.io/managed-by": "test-runner",
+				},
 				"registryNodePort": int64(1234),
 			},
 		}
@@ -71,7 +80,10 @@ func Test_flagsBuilder_Build(t *testing.T) {
 				"testBuildExecutorArgs",
 				"testMaxSimultaneousJobs",
 				"testHealthzLivenessTimeout",
-			).Build()
+			).
+			WithLogFormat("testLogFormat").
+			WithLogLevel("testLogLevel").
+			WithManagedByLabel("test-runner").Build()
 
 		require.Equal(t, expectedFlags, flags)
 	})

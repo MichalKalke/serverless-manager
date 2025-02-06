@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: functions.serverless.kyma-project.io
 spec:
   group: serverless.kyma-project.io
@@ -112,10 +112,13 @@ spec:
                               description: The key to select.
                               type: string
                             name:
+                              default: ""
                               description: |-
                                 Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                             optional:
                               description: Specify whether the ConfigMap or its key
@@ -174,10 +177,13 @@ spec:
                                 be a valid secret key.
                               type: string
                             name:
+                              default: ""
                               description: |-
                                 Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                             optional:
                               description: Specify whether the Secret or its key must
@@ -221,8 +227,9 @@ spec:
                   build Job.
                 properties:
                   build:
-                    description: Specifies resources requested by the build Job's
-                      Pod.
+                    description: |-
+                      Deprecated: Specifies resources requested by the build Job's Pod.
+                      This setting should be removed from a future version where Functions won't require building images.
                     properties:
                       profile:
                         description: |-
@@ -240,10 +247,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -254,6 +259,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -313,10 +324,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -327,6 +336,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -370,9 +385,10 @@ spec:
                 type: object
               runtime:
                 description: Specifies the runtime of the Function. The available
-                  values are `nodejs20` and `python312`.
+                  values are `nodejs20`, `nodejs22`, and `python312`.
                 enum:
                 - nodejs20
+                - nodejs22
                 - python312
                 type: string
               runtimeImageOverride:
@@ -381,7 +397,9 @@ spec:
                 type: string
               scaleConfig:
                 description: |-
+                  Deprecated:
                   Defines the minimum and maximum number of Function's Pods to run at a time.
+                  This setting should be removed from a future version, where Serverless will no longer automatically create HPA.
                   When it is configured, a HorizontalPodAutoscaler will be deployed and will control the **Replicas** field
                   to scale the Function based on the CPU utilisation.
                 properties:
@@ -535,7 +553,9 @@ spec:
                   from which the Function is built.
                 type: string
               buildResourceProfile:
-                description: Specifies the preset used for the build job
+                description: |-
+                  Deprecated: Specifies the preset used for the build job
+                  This setting should be removed from a future version where Functions won't require building images.
                 type: string
               commit:
                 description: Specifies the commit hash used to build the Function.

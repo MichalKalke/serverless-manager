@@ -3,6 +3,8 @@ package serverless
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	serverlessv1alpha2 "github.com/kyma-project/serverless/components/serverless/pkg/apis/serverless/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
@@ -11,7 +13,7 @@ import (
 	v1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"strings"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var _ stateFn = stateFnValidateFunction
@@ -27,6 +29,7 @@ func stateFnValidateFunction(_ context.Context, r *reconciler, s *systemState) (
 
 	spec := s.instance.Spec
 	validationFns := []validationFn{
+		validateRuntime(spec.Runtime),
 		validateFunctionResources,
 		validateBuildResources,
 		validateEnvs(spec.Env, "spec.env"),
@@ -45,7 +48,7 @@ func stateFnValidateFunction(_ context.Context, r *reconciler, s *systemState) (
 	if len(validationResults) != 0 {
 		msg := strings.Join(validationResults, ". ")
 		cond := createValidationFailedCondition(msg)
-		r.result.Requeue = false
+		r.result = ctrl.Result{Requeue: false}
 		return buildStatusUpdateStateFnWithCondition(cond), nil
 	}
 	return stateFnInitialize, nil
@@ -135,6 +138,17 @@ func validateInlineDeps(runtime serverlessv1alpha2.Runtime, inlineSource *server
 		if err := serverlessv1alpha2.ValidateDependencies(runtime, inlineSource.Dependencies); err != nil {
 			return []string{
 				fmt.Sprintf("invalid source.inline.dependencies value: %s", err.Error()),
+			}
+		}
+		return []string{}
+	}
+}
+
+func validateRuntime(runtime serverlessv1alpha2.Runtime) validationFn {
+	return func() []string {
+		if err := serverlessv1alpha2.ValidateRuntime(runtime); err != nil {
+			return []string{
+				fmt.Sprintf("invalid runtime value: %s", err.Error()),
 			}
 		}
 		return []string{}
