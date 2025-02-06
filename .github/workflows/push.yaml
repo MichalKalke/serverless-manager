@@ -5,21 +5,7 @@ on:
     branches: [ "main", "release-*" ]
 
 jobs:
-  builds:
-    uses: ./.github/workflows/_build.yaml
-    with:
-      purpose: "dev"
-      img_directory: "prod"
-      img_version: ${{ github.sha }}
-
   integrations:
-    needs: builds
-    secrets: inherit
     uses: ./.github/workflows/_integration-tests.yaml
     with:
-      image: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
-
-  upgrades:
-    needs: builds
-    secrets: inherit
-    uses: ./.github/workflows/_upgrade-tests.yaml
+      image: europe-docker.pkg.dev/kyma-project/dev/serverless-operator@sha256:226e2f58e18bf85c10289bdcc1ad5151bc3383247b2b85d209170cc068c5fdf0
