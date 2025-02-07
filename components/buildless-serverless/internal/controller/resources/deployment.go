@@ -187,6 +187,11 @@ func (d *Deployment) volumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
+		}, corev1.Volume{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
 		})
 	}
 	return volumes
@@ -224,6 +229,11 @@ func (d *Deployment) volumeMounts() []corev1.VolumeMount {
 				ReadOnly:  true,
 				MountPath: path.Join(d.workingSourcesDir(), "package-registry-config/pip.conf"),
 				SubPath:   "pip.conf",
+			},
+			corev1.VolumeMount{
+				Name:      "tmp",
+				ReadOnly:  false,
+				MountPath: "/tmp",
 			})
 	}
 	return volumeMounts
