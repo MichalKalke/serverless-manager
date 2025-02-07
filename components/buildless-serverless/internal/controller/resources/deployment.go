@@ -279,6 +279,7 @@ npm start;`
 echo "${FUNC_HANDLER_DEPENDENCIES}" > requirements.txt;
 PIP_CONFIG_FILE=package-registry-config/pip.conf pip install --user --no-cache-dir -r /kubeless/requirements.txt;
 cd ..;
+echo "chleb";
 python /kubeless.py;`
 		}
 		return `echo "${FUNC_HANDLER_SOURCE}" > handler.py;
