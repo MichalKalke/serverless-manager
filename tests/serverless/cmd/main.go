@@ -65,7 +65,7 @@ var availableScenarios = map[string][]testSuite{
 	},
 	"git-auth-integration": {{name: "gitauth", test: testsuite.GitAuthTestSteps}},
 	"serverless-contract-tests": {
-		{name: "tracing", test: testsuite.FunctionTracingTest},
+		{name: "tracingg", test: testsuite.FunctionTracingTest},
 		{name: "api-gateway", test: testsuite.FunctionAPIGatewayTest},
 		{name: "cloud-events", test: testsuite.FunctionCloudEventsTest},
 		{name: "hana-client", test: testsuite.HanaClientTest},
