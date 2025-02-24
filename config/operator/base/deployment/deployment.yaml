@@ -5,16 +5,13 @@ metadata:
   namespace: system
   labels:
     control-plane: operator
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: serverless-operator
-    app.kubernetes.io/component: operator
-    app.kubernetes.io/created-by: serverless-operator
-    app.kubernetes.io/part-of: serverless-operator
-    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/component: serverless-operator.kyma-project.io
+    app.kubernetes.io/instance: serverless-operator-deployment
 spec:
   selector:
     matchLabels:
       control-plane: operator
+      app.kubernetes.io/component: serverless-operator.kyma-project.io
   replicas: 1
   template:
     metadata:
@@ -23,15 +20,20 @@ spec:
       labels:
         control-plane: operator
         sidecar.istio.io/inject: "false"
+        app.kubernetes.io/component: serverless-operator.kyma-project.io
     spec:
+      priorityClassName: "operator-priority"
       securityContext:
         runAsNonRoot: true
       containers:
       - command:
         - /operator
         image: controller:latest
+        imagePullPolicy: IfNotPresent
         name: manager
         env:
+        - name: CHART_PATH
+          value: /module-chart
         - name: SERVERLESS_MANAGER_UID
           valueFrom:
             fieldRef:

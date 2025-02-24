@@ -1,0 +1,27 @@
+global:
+  containerRegistry:
+    path: europe-docker.pkg.dev/kyma-project
+  images:
+    function_controller:
+      name: "function-buildless-controller"
+      version: "main"
+      directory: "prod"
+    function_runtime_nodejs20:
+      name: "function-runtime-nodejs20"
+      version: "main"
+      directory: "prod"
+    function_runtime_nodejs22:
+      name: "function-runtime-nodejs22"
+      version: "main"
+      directory: "prod"
+    function_runtime_python312:
+      name: "function-runtime-python312"
+      version: "main"
+      directory: "prod"
+containers:
+  manager:
+    configuration:
+      data:
+        packageRegistryConfigSecretName: 'serverless-package-registry-config'
+        functionTraceCollectorEndpoint: "http://telemetry-otlp-traces.kyma-system.svc.cluster.local:4318/v1/traces"
+        functionPublisherProxyAddress: "http://eventing-publisher-proxy.kyma-system.svc.cluster.local/publish"

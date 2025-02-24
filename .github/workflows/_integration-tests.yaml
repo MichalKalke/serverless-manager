@@ -7,6 +7,11 @@ on:
         description: 'The image to test'
         required: true
         type: string
+      trigger_btp:
+        description: 'Trigger BTP integration test'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   operator-integration-test:
@@ -28,33 +33,24 @@ jobs:
       - if: ${{ always() }}
         uses: ./.github/actions/collect-cluster-info
 
-  gardener-integration-test:
-    if: ${{ !startsWith(github.event_name, 'pull_request') }}
+  buildless-serverless-integration-test:
+    if: ${{ !startsWith(github.event_name, 'pull_request') || github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
       - uses: ./.github/actions/setup-go
-      - name: provision gardener
-        run: |
-          echo "$GARDENER_SA" > $GARDENER_SA_PATH
-          echo "Used kubeconfig file has $(sed -n '$=' $GARDENER_SA_PATH) lines"
-          make -C hack provision-gardener
-        env:
-          GARDENER_SECRET_NAME: ${{ secrets.GARDENER_SECRET_NAME }}
-          GARDENER_PROJECT: ${{ secrets.GARDENER_PROJECT }}
-          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
-          GARDENER_SA: ${{ secrets.GARDENER_SA }}
+      - uses: ./.github/actions/create-k3d-cluster
       - name: run test
         run: |
-          make -C components/operator deploy
-          make -C tests/operator test
+          make install-buildless-serverless-custom-operator
+          make -C tests/serverless serverless-integration serverless-contract-tests
+          make remove-serverless
         env:
           IMG: ${{ inputs.image }}
-      - name: deprovision gardener
-        if: ${{ always() }}
-        run: make -C hack deprovision-gardener
-        env:
-          GARDENER_SA_PATH: /tmp/gardener-sa.yaml
+          INCLUDE_GITOPS_TEST: false
 
   serverless-integration-test:
     if: ${{ !startsWith(github.event_name, 'pull_request') || github.event.pull_request.draft == false }}
@@ -73,6 +69,7 @@ jobs:
           make remove-serverless
         env:
           IMG: ${{ inputs.image }}
+          INCLUDE_GITOPS_TEST: true
 
   git-auth-integration-test:
     if: ${{ !startsWith(github.event_name, 'pull_request') || github.event.pull_request.draft == false }}
@@ -94,3 +91,53 @@ jobs:
           APP_TEST_AZURE_BASIC_AUTH_USERNAME: ${{ secrets.GIT_AUTH_TEST_AZURE_USERNAME }}
           APP_TEST_AZURE_BASIC_AUTH_PASSWORD: ${{ secrets.GIT_AUTH_TEST_AZURE_PASSWORD }}
           IMG: ${{ inputs.image }}
+
+  btp-integration-test:
+    if: ${{ inputs.trigger_btp }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - uses: ./.github/actions/setup-go
+      - name: compute github commit sha
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - uses: kyma-project/terraform-module/.github/actions/create-sap-btp-kyma@2edb264e0f701fc93af4fb35eaeb7b8b3c05e493
+        id: create-btp-resources
+        with:
+          btp_subaccount_name: serverless-test-${{ steps.vars.outputs.sha_short }}-${{ github.run_attempt }}
+          btp_backend_url: '${{ secrets.BTP_BACKEND_URL}}'
+          btp_user: '${{ secrets.BTP_BOT_USER}}'
+          btp_password: '${{ secrets.BTP_BOT_PASSWORD}}'
+          btp_global_account: '${{ secrets.BTP_GLOBAL_ACCOUNT }}'
+          btp_idp_tenant: '${{ secrets.BTP_CUSTOM_IAS_TENANT }}'
+          btp_subaccount_region: '${{ secrets.BTP_SUBACCOUNT_REGION }}'
+          btp_kyma_region: '${{ secrets.BTP_KYMA_REGION }}'
+          btp_kyma_plan: '${{ secrets.BTP_KYMA_PLAN }}'
+          btp_kyma_modules: "[]"
+          btp_kyma_autoscaler_min: 4
+      - name: run tests
+        run: |
+          make install-serverless-custom-operator
+          make -C tests/serverless serverless-integration
+          kubectl delete functions.serverless.kyma-project.io -A --all
+          make -C tests/serverless git-auth-integration
+          kubectl delete functions.serverless.kyma-project.io -A --all
+        env:
+          IMG: ${{ inputs.image }}
+          APP_TEST_GITHUB_SSH_AUTH_KEY: ${{ secrets.GIT_AUTH_TEST_GITHUB_SSH_KEY }}
+          APP_TEST_AZURE_BASIC_AUTH_USERNAME: ${{ secrets.GIT_AUTH_TEST_AZURE_USERNAME }}
+          APP_TEST_AZURE_BASIC_AUTH_PASSWORD: ${{ secrets.GIT_AUTH_TEST_AZURE_PASSWORD }}
+
+      - uses: kyma-project/terraform-module/.github/actions/force-delete-sap-btp-subaccount@2edb264e0f701fc93af4fb35eaeb7b8b3c05e493
+        if: always()
+        with:
+          btp_subaccount_id: ${{ steps.create-btp-resources.outputs.subaccount_id }}
+          btp_backend_url: ${{ secrets.BTP_BACKEND_URL}}
+          btp_user: ${{ secrets.BTP_BOT_USER}}
+          btp_password: ${{ secrets.BTP_BOT_PASSWORD}}
+          btp_global_account: ${{ secrets.BTP_GLOBAL_ACCOUNT }}
+          btp_idp_tenant: ${{ secrets.BTP_CUSTOM_IAS_TENANT }}
+

@@ -8,6 +8,21 @@ on:
         required: false
         type: string
         default: ""
+      purpose:
+        description: "Purpose of the build (dev - for pull/push, empty - for release)"
+        required: false
+        type: string
+        default: ""
+      img_directory:
+        description: "Directory of the image (dev/prod)"
+        required: false
+        type: string
+        default: ""
+      img_version:
+        description: "Version of the image"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   compute-tags:
@@ -39,6 +54,10 @@ jobs:
       name: serverless-operator
       dockerfile: components/operator/Dockerfile
       tags: ${{ needs.compute-tags.outputs.tags }}
+      build-args: |
+        PURPOSE=${{ inputs.purpose }}
+        IMG_DIRECTORY=${{ inputs.img_directory }}
+        IMG_VERSION=${{ inputs.img_version }}
 
   # https://github.com/kyma-project/serverless/issues/998#issuecomment-2191556454
   #  build-gitserver:
@@ -55,6 +74,15 @@ jobs:
     with:
       name: function-controller
       dockerfile: components/serverless/deploy/manager/Dockerfile
+      tags: ${{ needs.compute-tags.outputs.tags }}
+
+  build-buildless-serverless-controller:
+    needs: compute-tags
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: function-buildless-controller
+      dockerfile: Dockerfile
+      context: components/buildless-serverless
       tags: ${{ needs.compute-tags.outputs.tags }}
 
   build-serverless-webhook:
