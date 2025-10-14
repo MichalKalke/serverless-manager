@@ -4,6 +4,8 @@ on:
   pull_request_target:
     types: [ opened, edited, synchronize, reopened, ready_for_review ]
 
+
+
 jobs:
   operator-integration-test:
     runs-on: ubuntu-latest
@@ -19,6 +21,6 @@ jobs:
           make -C components/operator deploy
           make -C tests/operator test
         env:
-          IMG: "europe-docker.pkg.dev/kyma-project/prod/serverless-operator:efe3c95c211d3cda98c83318bd2567f702840c35"
+          IMG: "europe-docker.pkg.dev/kyma-project/prod/serverless-operator:f72a8f437731c672d2bf2e6b57b25ae5d3050e02"
       - if: ${{ always() }}
         uses: ./.github/actions/collect-cluster-info
