@@ -8,6 +8,21 @@ on:
         required: false
         type: string
         default: ""
+      purpose:
+        description: "Purpose of the build (dev - for pull/push, empty - for release)"
+        required: false
+        type: string
+        default: ""
+      img_directory:
+        description: "Directory of the image (dev/prod)"
+        required: false
+        type: string
+        default: ""
+      img_version:
+        description: "Version of the image"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   compute-tags:
@@ -16,7 +31,7 @@ jobs:
       tags: ${{ steps.get_tag.outputs.TAGS }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -39,6 +54,10 @@ jobs:
       name: serverless-operator
       dockerfile: components/operator/Dockerfile
       tags: ${{ needs.compute-tags.outputs.tags }}
+      build-args: |
+        PURPOSE=${{ inputs.purpose }}
+        IMG_DIRECTORY=${{ inputs.img_directory }}
+        IMG_VERSION=${{ inputs.img_version }}
 
   # https://github.com/kyma-project/serverless/issues/998#issuecomment-2191556454
   #  build-gitserver:
@@ -56,6 +75,15 @@ jobs:
       name: function-controller
       dockerfile: components/serverless/deploy/manager/Dockerfile
       tags: ${{ needs.compute-tags.outputs.tags }}
+      platforms: linux/amd64 # this image does not support arm64
+
+  build-buildless-serverless-controller:
+    needs: compute-tags
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: function-buildless-controller
+      dockerfile: components/buildless-serverless/Dockerfile
+      tags: ${{ needs.compute-tags.outputs.tags }}
 
   build-serverless-webhook:
     needs: compute-tags
@@ -72,14 +100,23 @@ jobs:
       name: function-build-init
       dockerfile: components/serverless/deploy/jobinit/Dockerfile
       tags: ${{ needs.compute-tags.outputs.tags }}
+      platforms: linux/amd64 # this image does not support arm64
+
+  build-buildless-serverless-jobinit:
+    needs: compute-tags
+    uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
+    with:
+      name: function-buildless-init
+      dockerfile: components/buildless-serverless/Dockerfile.jobinit
+      tags: ${{ needs.compute-tags.outputs.tags }}
 
   build-nodejs20:
     needs: compute-tags
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: function-runtime-nodejs20
-      dockerfile: nodejs20/Dockerfile
-      context: components/runtimes/nodejs
+      dockerfile: Dockerfile
+      context: components/runtimes/nodejs20
       tags: ${{ needs.compute-tags.outputs.tags }}
 
   build-nodejs22:
@@ -87,8 +124,8 @@ jobs:
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: function-runtime-nodejs22
-      dockerfile: nodejs22/Dockerfile
-      context: components/runtimes/nodejs
+      dockerfile: Dockerfile
+      context: components/runtimes/nodejs22
       tags: ${{ needs.compute-tags.outputs.tags }}
 
   build-python312:
@@ -96,6 +133,6 @@ jobs:
     uses: kyma-project/test-infra/.github/workflows/image-builder.yml@main # Usage: kyma-project/test-infra/.github/workflows/image-builder.yml@main
     with:
       name: function-runtime-python312
-      dockerfile: python312/Dockerfile
-      context: components/runtimes/python
+      dockerfile: Dockerfile
+      context: components/runtimes/python312
       tags: ${{ needs.compute-tags.outputs.tags }}

@@ -7,13 +7,12 @@ jobs:
   operator-upgrade-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-go
       - uses: ./.github/actions/create-k3d-cluster
       - name: upgrade test
         run: |
           make -C components/operator deploy-release
-          make -C tests/operator test
           make -C components/operator deploy
           make -C tests/operator test
         env:
@@ -24,7 +23,7 @@ jobs:
   serverless-upgrade-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-go
       - uses: ./.github/actions/create-k3d-cluster
       - name: upgrade test

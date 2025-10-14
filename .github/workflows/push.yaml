@@ -2,20 +2,14 @@ name: push
 
 on:
   push:
-    branches: [ "main", "release-*" ]
+    branches: ["main", "release-*"]
+
+permissions:
+  id-token: write # This is required for requesting the JWT token
+  contents: read # This is required for actions/checkout
 
 jobs:
-  builds:
-    uses: ./.github/workflows/_build.yaml
-  
   integrations:
-    needs: builds
-    secrets: inherit
     uses: ./.github/workflows/_integration-tests.yaml
     with:
       image: europe-docker.pkg.dev/kyma-project/prod/serverless-operator:${{ github.sha }}
-
-  upgrades:
-    needs: builds
-    secrets: inherit
-    uses: ./.github/workflows/_upgrade-tests.yaml

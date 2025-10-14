@@ -2,6 +2,13 @@
 
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "gha"
+      include: "scope"
   - package-ecosystem: "gomod"
     directory: "/"
     labels:
@@ -24,6 +31,17 @@ updates:
       k8s-io:
         patterns:
           - "k8s.io/*"
+
+  - package-ecosystem: "docker"
+    directory: "/components/buildless-serverless"
+    labels:
+      - "area/dependency"
+      - "kind/chore"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "buildless"
+      include: "scope"
 
   - package-ecosystem: "docker"
     directory: "/components/operator"
@@ -79,7 +97,7 @@ updates:
       include: "scope"
 
   - package-ecosystem: "docker"
-    directory: "/components/runtimes/python/python312"
+    directory: "/components/runtimes/python312"
     labels:
       - "area/dependency"
       - "kind/chore"
@@ -93,7 +111,7 @@ updates:
       - dependency-name: kyma-project/prod/external/library/python
         update-types: ["version-update:semver-minor"]
   - package-ecosystem: "docker"
-    directory: "/components/runtimes/nodejs/nodejs20"
+    directory: "/components/runtimes/nodejs20"
     labels:
       - "area/dependency"
       - "kind/chore"
@@ -103,7 +121,7 @@ updates:
       prefix: "nodejs20"
       include: "scope"
   - package-ecosystem: "docker"
-    directory: "/components/runtimes/nodejs/nodejs22"
+    directory: "/components/runtimes/nodejs22"
     labels:
       - "area/dependency"
       - "kind/chore"
@@ -114,7 +132,7 @@ updates:
       include: "scope"
 
   - package-ecosystem: "pip"
-    directory: "/components/runtimes/python/python312"
+    directory: "/components/runtimes/python312"
     labels:
       - "area/dependency"
       - "kind/chore"
@@ -129,7 +147,7 @@ updates:
           - "opentelemetry-*"
 
   - package-ecosystem: "npm"
-    directory: "/components/runtimes/nodejs/nodejs20"
+    directory: "/components/runtimes/nodejs20"
     labels:
       - "area/dependency"
       - "kind/chore"
@@ -137,6 +155,20 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "npm-nodejs20"
+      include: "scope"
+    groups:
+      opentelemetry:
+        patterns:
+          - "@opentelemetry/*"
+  - package-ecosystem: "npm"
+    directory: "/components/runtimes/nodejs22"
+    labels:
+      - "area/dependency"
+      - "kind/chore"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "npm-nodejs22"
       include: "scope"
     groups:
       opentelemetry:

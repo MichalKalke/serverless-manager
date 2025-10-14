@@ -3,6 +3,8 @@ package state
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/kyma-project/serverless/components/operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -10,10 +12,17 @@ import (
 )
 
 const (
-	slowBuildPreset    = "slow"
-	slowRuntimePreset  = "XS"
-	normalBuildPreset  = "normal"
-	largeRuntimePreset = "L"
+	slowBuildPreset         = "slow"
+	slowRuntimePreset       = "XS"
+	normalBuildPreset       = "normal"
+	largeRuntimePreset      = "L"
+	defaultLogLevel         = "info"
+	defaultLogFormat        = "json"
+	buildlessChartPath      = "/buildless-module-chart"
+	oldServerlessChartPath  = "/module-chart"
+	buildlessModeAnnotation = "serverless.kyma-project.io/buildless-mode"
+	buildlessModeEnabled    = "enabled"
+	buildlessModeDisabled   = "disabled"
 )
 
 func sFnControllerConfiguration(ctx context.Context, r *reconciler, s *systemState) (stateFn, *controllerruntime.Result, error) {
@@ -24,6 +33,9 @@ func sFnControllerConfiguration(ctx context.Context, r *reconciler, s *systemSta
 
 	configureControllerConfigurationFlags(s)
 
+	//TODO: remove when buildless is enabled by default
+	configureChartPathAndFlag(s, r.log)
+
 	s.setState(v1alpha1.StateProcessing)
 	s.instance.UpdateConditionTrue(
 		v1alpha1.ConditionTypeConfigured,
@@ -31,7 +43,7 @@ func sFnControllerConfiguration(ctx context.Context, r *reconciler, s *systemSta
 		"Configuration ready",
 	)
 
-	return nextState(sFnApplyResources)
+	return nextState(sFnConfigureNetworkPolicies)
 }
 
 func updateControllerConfigurationStatus(ctx context.Context, r *reconciler, instance *v1alpha1.Serverless) error {
@@ -56,6 +68,8 @@ func updateControllerConfigurationStatus(ctx context.Context, r *reconciler, ins
 		{spec.HealthzLivenessTimeout, &instance.Status.HealthzLivenessTimeout, "Duration of health check", ""},
 		{spec.DefaultBuildJobPreset, &instance.Status.DefaultBuildJobPreset, "Default build job preset", defaultBuildPreset},
 		{spec.DefaultRuntimePodPreset, &instance.Status.DefaultRuntimePodPreset, "Default runtime pod preset", defaultRuntimePreset},
+		{spec.LogLevel, &instance.Status.LogLevel, "Log level", defaultLogLevel},
+		{spec.LogFormat, &instance.Status.LogFormat, "Log format", defaultLogFormat},
 	}
 
 	updateStatusFields(r.k8s, instance, fields)
@@ -74,7 +88,9 @@ func configureControllerConfigurationFlags(s *systemState) {
 		WithDefaultPresetFlags(
 			s.instance.Status.DefaultBuildJobPreset,
 			s.instance.Status.DefaultRuntimePodPreset,
-		)
+		).
+		WithLogLevel(s.instance.Status.LogLevel).
+		WithLogFormat(s.instance.Status.LogFormat)
 }
 
 func getNodesLen(ctx context.Context, c client.Client) (int, error) {
@@ -85,4 +101,27 @@ func getNodesLen(ctx context.Context, c client.Client) (int, error) {
 	}
 
 	return len(nodeList.Items), nil
+}
+
+// TODO: remove these methods when buildless is enabled by default
+func configureChartPathAndFlag(s *systemState, log *zap.SugaredLogger) {
+	configureChartPath(s, log)
+	if s.chartConfig == nil {
+		return
+	}
+	s.flagsBuilder.WithChartPath(s.chartConfig.Release.ChartPath)
+}
+
+func configureChartPath(s *systemState, log *zap.SugaredLogger) {
+	val, exists := s.instance.Annotations[buildlessModeAnnotation]
+	if !exists {
+		// we use default value from environment variable if annotation is not set
+		return
+	}
+	if val == buildlessModeDisabled {
+		log.Info("Chart path is set to old serverless module chart")
+		s.chartConfig.Release.ChartPath = oldServerlessChartPath
+	}
+	log.Infof("Using chart path: %s", s.chartConfig.Release.ChartPath)
+	// we use default value from environment variable if annotation has unexpected value
 }

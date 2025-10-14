@@ -8,7 +8,8 @@ import (
 
 func Test_flagsBuilder_Build(t *testing.T) {
 	t.Run("build empty flags", func(t *testing.T) {
-		flags := NewFlagsBuilder().Build()
+		flags, err := NewFlagsBuilder().Build()
+		require.NoError(t, err)
 		require.Equal(t, map[string]interface{}{}, flags)
 	})
 
@@ -39,6 +40,12 @@ func Test_flagsBuilder_Build(t *testing.T) {
 							},
 						},
 					},
+					"logConfiguration": map[string]interface{}{
+						"data": map[string]interface{}{
+							"logLevel":  "testLogLevel",
+							"logFormat": "testLogFormat",
+						},
+					},
 				},
 			},
 			"docker-registry": map[string]interface{}{
@@ -53,11 +60,17 @@ func Test_flagsBuilder_Build(t *testing.T) {
 				"username":        "testUsername",
 			},
 			"global": map[string]interface{}{
+				"commonLabels": map[string]interface{}{
+					"app.kubernetes.io/managed-by": "test-runner",
+				},
 				"registryNodePort": int64(1234),
+			},
+			"networkPolicies": map[string]interface{}{
+				"enabled": true,
 			},
 		}
 
-		flags := NewFlagsBuilder().
+		flags, err := NewFlagsBuilder().
 			WithNodePort(1234).
 			WithDefaultPresetFlags("testJobPreset", "testPodPreset").
 			WithOptionalDependencies("testPublisherURL", "testCollectorURL").
@@ -71,8 +84,13 @@ func Test_flagsBuilder_Build(t *testing.T) {
 				"testBuildExecutorArgs",
 				"testMaxSimultaneousJobs",
 				"testHealthzLivenessTimeout",
-			).Build()
+			).
+			WithLogFormat("testLogFormat").
+			WithLogLevel("testLogLevel").
+			WithManagedByLabel("test-runner").
+			WithEnableNetworkPolicies(true).Build()
 
+		require.NoError(t, err)
 		require.Equal(t, expectedFlags, flags)
 	})
 
@@ -86,11 +104,12 @@ func Test_flagsBuilder_Build(t *testing.T) {
 			},
 		}
 
-		flags := NewFlagsBuilder().
+		flags, err := NewFlagsBuilder().
 			WithRegistryAddresses("testRegistryAddress", "testServerAddress").
 			WithRegistryCredentials("testUsername", "testPassword").
 			Build()
 
+		require.NoError(t, err)
 		require.Equal(t, expectedFlags, flags)
 	})
 
@@ -107,17 +126,56 @@ func Test_flagsBuilder_Build(t *testing.T) {
 					},
 				},
 			},
+			"networkPolicies": map[string]interface{}{
+				"enabled": false,
+			},
 		}
 
-		flags := NewFlagsBuilder().
+		flags, err := NewFlagsBuilder().
 			WithControllerConfiguration(
 				"testCPUUtilizationPercentage",
 				"",
 				"",
 				"testMaxSimultaneousJobs",
 				"testHealthzLivenessTimeout",
-			).Build()
+			).WithEnableNetworkPolicies(false).Build()
 
+		require.NoError(t, err)
+		require.Equal(t, expectedFlags, flags)
+	})
+
+	t.Run("build images flags only", func(t *testing.T) {
+		expectedFlags := map[string]interface{}{
+			"global": map[string]interface{}{
+				"images": map[string]interface{}{
+					"function_buildful_controller": "testFunctionBuildfulController",
+					"function_controller":          "testFunctionController",
+					"function_build_init":          "testFunctionBuildInit",
+					"function_init":                "testFunctionInit",
+					"registry_init":                "testRegistryInit",
+					"function_runtime_nodejs20":    "testFunctionRuntimeNodejs20",
+					"function_runtime_nodejs22":    "testFunctionRuntimeNodejs22",
+					"function_runtime_python312":   "testFunctionRuntimePython312",
+					"kaniko_executor":              "testKanikoExecutor",
+					"registry":                     "testRegistry",
+				},
+			},
+		}
+
+		flags, err := NewFlagsBuilder().
+			WithImageFunctionBuildfulController("testFunctionBuildfulController").
+			WithImageFunctionController("testFunctionController").
+			WithImageFunctionBuildInit("testFunctionBuildInit").
+			WithImageFunctionInit("testFunctionInit").
+			WithImageRegistryInit("testRegistryInit").
+			WithImageFunctionRuntimeNodejs20("testFunctionRuntimeNodejs20").
+			WithImageFunctionRuntimeNodejs22("testFunctionRuntimeNodejs22").
+			WithImageFunctionRuntimePython312("testFunctionRuntimePython312").
+			WithImageKanikoExecutor("testKanikoExecutor").
+			WithImageRegistry("testRegistry").
+			Build()
+
+		require.NoError(t, err)
 		require.Equal(t, expectedFlags, flags)
 	})
 }

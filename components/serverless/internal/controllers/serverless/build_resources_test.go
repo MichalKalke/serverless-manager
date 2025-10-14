@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-project/serverless/components/serverless/internal/controllers/serverless/runtime"
 	fnRuntime "github.com/kyma-project/serverless/components/serverless/internal/controllers/serverless/runtime"
 	serverlessv1alpha2 "github.com/kyma-project/serverless/components/serverless/pkg/apis/serverless/v1alpha2"
 	"github.com/onsi/gomega"
@@ -17,7 +16,7 @@ import (
 )
 
 var (
-	rtmNodeJS20  = fnRuntime.GetRuntimeConfig(serverlessv1alpha2.NodeJs20)
+	rtmNodeJS22  = fnRuntime.GetRuntimeConfig(serverlessv1alpha2.NodeJs22)
 	rtmPython312 = fnRuntime.GetRuntimeConfig(serverlessv1alpha2.Python312)
 )
 
@@ -78,7 +77,7 @@ func TestFunctionReconciler_buildDeployment(t *testing.T) {
 	type args struct {
 		instance *serverlessv1alpha2.Function
 	}
-	rtmCfg := runtime.GetRuntimeConfig(serverlessv1alpha2.NodeJs20)
+	rtmCfg := fnRuntime.GetRuntimeConfig(serverlessv1alpha2.NodeJs22)
 	resourceCfg := fixResources()
 
 	tests := []struct {
@@ -101,7 +100,6 @@ func TestFunctionReconciler_buildDeployment(t *testing.T) {
 			}
 
 			got := s.buildDeployment(buildDeploymentArgs{}, cfg{
-				runtimeBaseImage: "some_image",
 				fn: FunctionConfig{
 					ResourceConfig: ResourceConfig{
 						Function: FunctionResourceConfig{
@@ -212,7 +210,6 @@ func TestFunctionReconciler_buildDeploymentWithResources(t *testing.T) {
 			s := systemState{instance: *tt.args.instance}
 
 			got := s.buildDeployment(buildDeploymentArgs{}, cfg{
-				runtimeBaseImage: "some_image",
 				fn: FunctionConfig{
 					ResourceConfig: ResourceConfig{
 						Function: FunctionResourceConfig{
@@ -449,12 +446,12 @@ func TestFunctionReconciler_buildJob(t *testing.T) {
 		ExpectedVolumeMounts []corev1.VolumeMount
 	}{
 		{
-			Name:               "Success Node20",
-			Runtime:            serverlessv1alpha2.NodeJs20,
+			Name:               "Success Node22",
+			Runtime:            serverlessv1alpha2.NodeJs22,
 			ExpectedVolumesLen: 4,
 			ExpectedVolumes: []expectedVolume{
 				{name: "sources", localObjectReference: cmName},
-				{name: "runtime", localObjectReference: rtmNodeJS20.DockerfileConfigMapName},
+				{name: "runtime", localObjectReference: rtmNodeJS22.DockerfileConfigMapName},
 				{name: "credentials", localObjectReference: dockerCfg.ActiveRegistryConfigSecretName},
 				{name: "registry-config", localObjectReference: packageRegistryConfigSecretName},
 			},

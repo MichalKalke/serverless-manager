@@ -2,9 +2,6 @@ package serverless
 
 import (
 	"context"
-	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,7 +10,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -84,10 +80,10 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Cont
 		Owns(&corev1.Service{}).
 		Owns(&autoscalingv1.HorizontalPodAutoscaler{}).
 		WithOptions(controller.Options{
-			RateLimiter: workqueue.NewMaxOfRateLimiter(
-				workqueue.NewItemExponentialFailureRateLimiter(r.config.GitFetchRequeueDuration, 300*time.Second),
+			RateLimiter: workqueue.NewTypedMaxOfRateLimiter(
+				workqueue.NewTypedItemExponentialFailureRateLimiter[ctrl.Request](r.config.GitFetchRequeueDuration, 300*time.Second),
 				// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
-				&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+				&workqueue.TypedBucketRateLimiter[ctrl.Request]{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 			),
 			MaxConcurrentReconciles: 1, // Build job scheduling mechanism requires this parameter to be set to 1. The mechanism is based on getting active and stateless jobs, concurrent reconciles makes it non deterministic . Value 1 removes data races while fetching list of jobs. https://github.com/kyma-project/kyma/issues/10037
 		}).
@@ -105,7 +101,6 @@ func (r *FunctionReconciler) SetupWithManager(mgr ctrl.Manager) (controller.Cont
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;delete
 // +kubebuilder:rbac:groups="autoscaling",resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;deletecollection
-// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *FunctionReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	if IsHealthCheckRequest(request) {
@@ -142,16 +137,6 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, request ctrl.Request
 
 	contextLogger.Debug("starting state machine")
 
-	runtime := instance.Status.Runtime
-	if runtime == "" {
-		runtime = instance.Spec.Runtime
-	}
-
-	latestRuntimeImage, err := r.getRuntimeImageFromConfigMap(ctx, instance.GetNamespace(), runtime)
-	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "failed to fetch runtime image from config map")
-	}
-
 	stateReconciler := reconciler{
 		fn:  r.initStateFunction,
 		log: contextLogger,
@@ -161,9 +146,8 @@ func (r *FunctionReconciler) Reconcile(ctx context.Context, request ctrl.Request
 			statsCollector: r.statsCollector,
 		},
 		cfg: cfg{
-			fn:               r.config,
-			docker:           dockerCfg,
-			runtimeBaseImage: latestRuntimeImage,
+			fn:     r.config,
+			docker: dockerCfg,
 		},
 		gitClient: r.gitFactory.GetGitClient(contextLogger),
 	}
@@ -208,21 +192,4 @@ func (r *FunctionReconciler) readDockerConfig(ctx context.Context, instance *ser
 		}, nil
 	}
 
-}
-
-func (r *FunctionReconciler) getRuntimeImageFromConfigMap(ctx context.Context, namespace string, runtime serverlessv1alpha2.Runtime) (string, error) {
-	instance := &corev1.ConfigMap{}
-	dockerfileConfigMapName := fmt.Sprintf("dockerfile-%s", runtime)
-	err := r.client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: dockerfileConfigMapName}, instance)
-	if err != nil {
-		return "", errors.Wrap(err, "while extracting correct config map for given runtime")
-	}
-	baseImage := instance.Data["Dockerfile"]
-	re := regexp.MustCompile(`base_image=.*`)
-	matchedLines := re.FindStringSubmatch(baseImage)
-	if len(matchedLines) == 0 {
-		return "", errors.Errorf("could not find the base image from %s", dockerfileConfigMapName)
-	}
-	runtimeImage := strings.TrimPrefix(matchedLines[0], "base_image=")
-	return runtimeImage, err
 }

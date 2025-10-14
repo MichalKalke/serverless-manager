@@ -90,7 +90,7 @@ Function Controller tests keep failing with such an error message:
 
 Function Controller tests are failing due to the wrong version of the libgit2 binary. The required version of the binary is 1.1.
 
-### Remedy
+### Solution
 
 Build and install the libgit2 binary required by the Function Controller on macOS. Follow these steps:
 
@@ -120,7 +120,7 @@ Build and install the libgit2 binary required by the Function Controller on macO
    cmake -DCMAKE_OSX_ARCHITECTURES="x86_64" .
    make install
    ```
-#### Alternative Remedy
+#### Alternative Solution
 There is an alternative method for macOS that relies on [brew](https://brew.sh/).
 If you still see the `Invalid libgit2 version` error message on macOS, follow these steps:
 
@@ -158,6 +158,29 @@ assertion failed [!result.is_error]: Failed to create temporary file
 
 The Docker engine uses Rosetta for virtualization, which causes issues on M1 Mac.
 
-### Remedy
+### Solution
 
 Disable the `Use Rosetta for x86/amd64 emulation on Apple Silicon` option in the Docker Desktop general settings.
+
+### Symptom
+
+The Serverless build fails, with the following error message:
+```
+dyld[18077]: Library not loaded: @rpath/libgit2.1.5.dylib
+  Referenced from: <EE8B6DDF-D4F5-31D6-D722-3406DEBA716B> /Users/I758687/Library/Caches/JetBrains/GoLand2024.3/tmp/GoLand/___go_build_github_com_kyma_project_serverless_components_serverless_cmd_manager
+  Reason: no LC_RPATH's found
+```
+
+### Cause
+
+In the 2023 release notes for Xcode, Apple mentioned that the linker was rewritten, which could be the root cause of the issue. If you are experiencing similar symptoms, this discussion may be helpful: `https://forums.developer.apple.com/forums/thread/737920#766944022`
+
+### Solution
+To resolve the issue, use the `-ldflags` option with the `-r` flag set to `/usr/local/lib` when building Serverless.
+
+Example usage:
+
+`go build -ldflags "-r=/usr/local/lib" -a -o manager ./components/serverless/cmd/manager/main.go`
+
+
+

@@ -25,6 +25,7 @@ func TestGetRuntimeConfig(t *testing.T) {
 				DockerfileConfigMapName: "dockerfile-python312",
 				RuntimeEnvs: []corev1.EnvVar{{Name: "PYTHONPATH", Value: "$(KUBELESS_INSTALL_VOLUME)/lib.python3.12/site-packages:$(KUBELESS_INSTALL_VOLUME)"},
 					{Name: "FUNC_RUNTIME", Value: "python312"},
+					{Name: "FUNCTION_PATH", Value: "/kubeless"},
 					{Name: "PYTHONUNBUFFERED", Value: "TRUE"}},
 			},
 		},
@@ -37,7 +38,21 @@ func TestGetRuntimeConfig(t *testing.T) {
 				FunctionFile:            "handler.js",
 				DockerfileConfigMapName: "dockerfile-nodejs20",
 				RuntimeEnvs: []corev1.EnvVar{
+					{Name: "HANDLER_PATH", Value: "./function/handler.js"},
 					{Name: "FUNC_RUNTIME", Value: "nodejs20"}},
+			},
+		},
+		"nodejs22": {
+			name:    "nodejs22 config",
+			runtime: serverlessv1alpha2.NodeJs22,
+			want: runtime.Config{
+				Runtime:                 serverlessv1alpha2.NodeJs22,
+				DependencyFile:          "package.json",
+				FunctionFile:            "handler.js",
+				DockerfileConfigMapName: "dockerfile-nodejs22",
+				RuntimeEnvs: []corev1.EnvVar{
+					{Name: "HANDLER_PATH", Value: "./function/handler.js"},
+					{Name: "FUNC_RUNTIME", Value: "nodejs22"}},
 			},
 		}} {
 		t.Run(testName, func(t *testing.T) {

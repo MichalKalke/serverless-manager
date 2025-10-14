@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    kyma-project.io/module: serverless
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: serverless
+    app.kubernetes.io/instance: serverless
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/part-of: serverless
+    control-plane: controller-manager
+  name: serverless-ctrl-mngr
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: serverless
+      app.kubernetes.io/instance: serverless
+      app.kubernetes.io/name: serverless
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        sidecar.istio.io/inject: "false"
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        control-plane: controller-manager
+        networking.serverless.kyma-project.io/to-apiserver: allowed
+        networking.serverless.kyma-project.io/from-serverless: allowed
+        kyma-project.io/module: serverless
+        app: serverless
+        app.kubernetes.io/name: serverless
+        app.kubernetes.io/instance: serverless
+    spec:
+      volumes:
+        - name: configuration
+          configMap:
+            name: "{{ .Values.global.configuration.function.configmapName }}"
+        - name: log-configuration
+          configMap:
+            name: "{{ .Values.global.configuration.log.configmapName }}"
+      containers:
+        - command:
+            - /app/manager
+          image: "{{ .Values.global.images.function_controller }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.containers.manager.metricsPort }}
+              name: http-metrics
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.containers.manager.healthzPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          name: manager
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.containers.manager.healthzPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: APP_FUNCTION_CONFIG_PATH
+              value: "{{ .Values.global.configuration.function.targetDir }}/{{ .Values.global.configuration.function.filename }}"
+            - name: APP_LOG_CONFIG_PATH
+              value: "{{ .Values.global.configuration.log.targetDir }}/{{ .Values.global.configuration.log.filename }}"
+          volumeMounts:
+            - name: configuration
+              mountPath: {{ .Values.global.configuration.function.targetDir }}
+            - name: log-configuration
+              mountPath: {{ .Values.global.configuration.log.targetDir }}
+      securityContext:
+        runAsNonRoot: true
+        runAsGroup: 1000
+        runAsUser: 1000
+      serviceAccountName: serverless-controller-manager
+      terminationGracePeriodSeconds: 10

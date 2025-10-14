@@ -91,7 +91,7 @@ func TestGitOpsWithContinuousGitCheckout(t *testing.T) {
 	continuousGitCheckout := true
 
 	g := gomega.NewGomegaWithT(t)
-	rtm := serverlessv1alpha2.NodeJs20
+	rtm := serverlessv1alpha2.NodeJs22
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)
 	testCfg := setUpControllerConfig(g)
@@ -152,7 +152,7 @@ func TestGitOpsWithContinuousGitCheckout(t *testing.T) {
 				config:            testCfg,
 				gitFactory:        factory,
 				statsCollector:    statsCollector,
-				initStateFunction: stateFnGitCheckSources,
+				initStateFunction: stateFnInitialize,
 			}
 
 			fnLabels := reconciler.internalFunctionLabels(inFunction)
@@ -416,7 +416,7 @@ func TestGitOpsWithoutContinuousGitCheckout(t *testing.T) {
 	continuousGitCheckout := false
 
 	g := gomega.NewGomegaWithT(t)
-	rtm := serverlessv1alpha2.NodeJs20
+	rtm := serverlessv1alpha2.NodeJs22
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)
 	testCfg := setUpControllerConfig(g)
@@ -477,7 +477,7 @@ func TestGitOpsWithoutContinuousGitCheckout(t *testing.T) {
 				config:            testCfg,
 				gitFactory:        factory,
 				statsCollector:    statsCollector,
-				initStateFunction: stateFnGitCheckSources,
+				initStateFunction: stateFnInitialize,
 			}
 
 			fnLabels := reconciler.internalFunctionLabels(inFunction)
@@ -691,7 +691,7 @@ func TestGitOpsWithoutContinuousGitCheckout(t *testing.T) {
 func TestGitOps_GitErrorHandling(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	rtm := serverlessv1alpha2.NodeJs20
+	rtm := serverlessv1alpha2.NodeJs22
 
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)
@@ -773,7 +773,7 @@ func TestGitOps_GitErrorHandling(t *testing.T) {
 func Test_stateFnGitCheckSources(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
 
-	rtm := serverlessv1alpha2.NodeJs20
+	rtm := serverlessv1alpha2.NodeJs22
 
 	resourceClient, testEnv := setUpTestEnv(g)
 	defer tearDownTestEnv(g, testEnv)

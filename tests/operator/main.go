@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/serverless/tests/operator/function"
 	"os"
 	"time"
 
@@ -35,14 +36,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Start scenario")
+	log.Info("Start legacy serverless scenario")
 	err = runScenario(&utils.TestUtils{
-		Namespace: fmt.Sprintf("serverless-test-%s", uuid.New().String()),
-		Ctx:       ctx,
-		Client:    client,
-		Logger:    log,
+		LegacyMode: true,
+		Namespace:  fmt.Sprintf("serverless-legacy-test-%s", uuid.New().String()),
+		Ctx:        ctx,
+		Client:     client,
+		Logger:     log,
 
-		ServerlessName:           "default-test",
+		ServerlessName:           "legacy-test",
+		SecondServerlessName:     "default-test-two",
+		FunctionName:             "function-name",
 		ServerlessCtrlDeployName: "serverless-ctrl-mngr",
 		ServerlessRegistryName:   "serverless-docker-registry",
 		ServerlessUpdateSpec: v1alpha1.ServerlessSpec{
@@ -62,12 +66,46 @@ func main() {
 			HealthzLivenessTimeout:           "20",
 			DefaultBuildJobPreset:            "normal",
 			DefaultRuntimePodPreset:          "M",
+			EnableNetworkPolicies:            true,
 		},
 	})
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
+	log.Info("Legacy serverless scenario completed successfully")
+
+	log.Info("Start default serverless scenario")
+	err = runScenario(&utils.TestUtils{
+		LegacyMode: false,
+		Namespace:  fmt.Sprintf("serverless-test-%s", uuid.New().String()),
+		Ctx:        ctx,
+		Client:     client,
+		Logger:     log,
+
+		ServerlessName:           "default-test",
+		SecondServerlessName:     "default-test-two",
+		FunctionName:             "function-name",
+		ServerlessCtrlDeployName: "serverless-ctrl-mngr",
+		ServerlessConfigName:     "serverless-config",
+		ServerlessUpdateSpec: v1alpha1.ServerlessSpec{
+			Tracing: &v1alpha1.Endpoint{
+				Endpoint: "http://tracing-endpoint",
+			},
+			Eventing: &v1alpha1.Endpoint{
+				Endpoint: "http://eventing-endpoint",
+			},
+			FunctionRequeueDuration: "19m",
+			HealthzLivenessTimeout:  "20",
+			DefaultRuntimePodPreset: "M",
+			EnableNetworkPolicies:   true,
+		},
+	})
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	log.Info("Default serverless scenario completed successfully")
 }
 
 func runScenario(testutil *utils.TestUtils) error {
@@ -89,6 +127,28 @@ func runScenario(testutil *utils.TestUtils) error {
 		return err
 	}
 
+	// create second Serverless
+	testutil.Logger.Infof("Creating second serverless '%s'", testutil.SecondServerlessName)
+	if err := serverless.CreateSecond(testutil); err != nil {
+		return err
+	}
+
+	// verify second Serverless won't create
+	testutil.Logger.Infof("Verifying second serverless '%s' won't create", testutil.SecondServerlessName)
+	if err := utils.WithRetry(testutil, serverless.VerifyStuck); err != nil {
+		return err
+	}
+	testutil.Logger.Infof("Deleting second serverless '%s'", testutil.SecondServerlessName)
+	if err := serverless.DeleteSecond(testutil); err != nil {
+		return err
+	}
+
+	// create function
+	testutil.Logger.Infof("Creating function in namespace '%s'", testutil.Namespace)
+	if err := function.Create(testutil); err != nil {
+		return err
+	}
+
 	// update serverless with other spec
 	testutil.Logger.Infof("Updating serverless '%s'", testutil.ServerlessName)
 	if err := serverless.Update(testutil); err != nil {
@@ -98,6 +158,15 @@ func runScenario(testutil *utils.TestUtils) error {
 	// verify Serverless
 	testutil.Logger.Infof("Verifying serverless '%s'", testutil.ServerlessName)
 	if err := utils.WithRetry(testutil, serverless.Verify); err != nil {
+		return err
+	}
+
+	// verify Severless won't delete with function depending on it
+	testutil.Logger.Infof("Verifying serverless '%s' deletion is stuck", testutil.ServerlessName)
+	if err := serverless.Delete(testutil); err != nil {
+		return err
+	}
+	if err := utils.WithRetry(testutil, serverless.VerifyDeletionStuck); err != nil {
 		return err
 	}
 

@@ -4,7 +4,9 @@
 
 
 # Build the operator binary
-FROM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.23.1-alpine3.20 as builder
+FROM --platform=$BUILDPLATFORM europe-docker.pkg.dev/kyma-project/prod/external/library/golang:1.25.2-alpine3.22 AS builder
+
+ARG TARGETOS TARGETARCH
 
 WORKDIR /workdir
 
@@ -19,12 +21,12 @@ RUN go mod download
 COPY components/operator components/operator
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o operator ./components/operator/main.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o operator ./components/operator/main.go
 
 
 # Replace main images in values.yaml
 # Bumping serverless images in the values.yaml - used for building "local" and "dev" images
-FROM europe-docker.pkg.dev/kyma-project/prod/external/library/alpine:3.20.3 as replacer
+FROM europe-docker.pkg.dev/kyma-project/prod/external/ghcr.io/nginx/alpine-fips:0.4.0-alpine3.22 AS replacer
 
 WORKDIR /workdir
 
@@ -40,6 +42,7 @@ RUN apk update && apk add bash yq
 
 COPY components/operator/hack components/operator/hack
 COPY config/serverless config/serverless
+COPY config/buildless-serverless config/buildless-serverless
 COPY hack/ hack/
 
 RUN if [[ "dev" = "$PURPOSE" ]] ; then ./hack/replace_serverless_chart_images.sh all ; fi
@@ -54,6 +57,7 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --chown=65532:65532 --from=builder /workdir/operator .
 COPY --chown=65532:65532 --from=replacer /workdir/config/serverless /module-chart
+COPY --chown=65532:65532 --from=replacer /workdir/config/buildless-serverless /buildless-module-chart
 USER 65532:65532
 
 ENTRYPOINT ["/operator"]

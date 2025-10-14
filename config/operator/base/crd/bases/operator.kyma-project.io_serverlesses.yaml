@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: serverlesses.operator.kyma-project.io
 spec:
   group: operator.kyma-project.io
@@ -59,12 +59,17 @@ spec:
             description: ServerlessSpec defines the desired state of Serverless
             properties:
               defaultBuildJobPreset:
-                description: Configures the default build Job preset to be used
+                description: |-
+                  Deprecated: Configures the default build Job preset to be used
+                  This setting should be removed from a future version where Functions won't require building images.
                 type: string
               defaultRuntimePodPreset:
                 description: Configures the default runtime Pod preset to be used
                 type: string
               dockerRegistry:
+                description: |-
+                  Deprecated: Defines docker registry where built images should be pushed
+                  This setting should be removed from a future version where Functions won't require building images.
                 properties:
                   enableInternal:
                     description: When set to true, the internal Docker registry is
@@ -74,6 +79,10 @@ spec:
                     description: Secret used for configuration of the Docker registry
                     type: string
                 type: object
+              enableNetworkPolicies:
+                description: Enable deployment of network policies that allow serverless'
+                  essential in-cluster communication.
+                type: boolean
               eventing:
                 description: Used Eventing endpoint
                 properties:
@@ -83,12 +92,14 @@ spec:
                 - endpoint
                 type: object
               functionBuildExecutorArgs:
-                description: Specifies the arguments passed to the Function build
-                  executor
+                description: |-
+                  Deprecated: Specifies the arguments passed to the Function build executor
+                  This setting should be removed from a future version where Functions won't require building images.
                 type: string
               functionBuildMaxSimultaneousJobs:
-                description: A number of simultaneous jobs that can run at the same
-                  time. The default value is `5`
+                description: |-
+                  Deprecated: A number of simultaneous jobs that can run at the same time. The default value is `5`
+                  This setting should be removed from a future version where Functions won't require building images.
                 type: string
               functionRequeueDuration:
                 description: Sets the requeue duration for Function. By default, the
@@ -99,9 +110,18 @@ spec:
                 description: Sets the timeout for the Function health check. The default
                   value in seconds is `10`
                 type: string
+              logFormat:
+                description: Sets desired log format to be used. The default value
+                  is "json"
+                type: string
+              logLevel:
+                description: Sets desired log level to be used. The default value
+                  is "info"
+                type: string
               targetCPUUtilizationPercentage:
-                description: Sets a custom CPU utilization threshold for scaling Function
-                  Pods
+                description: |-
+                  Deprecated: Sets a custom CPU utilization threshold for scaling Function Pods
+                  This setting should be removed from a future version where Functions won't require building images.
                 type: string
               tracing:
                 description: Used Tracing endpoint
@@ -117,16 +137,8 @@ spec:
               conditions:
                 description: Conditions associated with CustomStatus.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource.\n---\nThis struct is intended for
-                    direct use as an array at the field path .status.conditions.  For
-                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
-                    observations of a foo's current state.\n\t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
-                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
-                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
-                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
-                    \   // other fields\n\t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
                       description: |-
@@ -167,12 +179,7 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: |-
-                        type of condition in CamelCase or in foo.example.com/CamelCase.
-                        ---
-                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                        useful (see .node.status.conditions), the ability to deconflict is important.
-                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
@@ -203,6 +210,18 @@ spec:
               functionRequeueDuration:
                 type: string
               healthzLivenessTimeout:
+                type: string
+              logFormat:
+                type: string
+              logLevel:
+                type: string
+              networkPoliciesEnabled:
+                description: |-
+                  NetworkPoliciesEnabled signifies if NetworkPolicies dedicated for serverless are enabled.
+                  Value can be one of ("True", "False").
+                enum:
+                - "True"
+                - "False"
                 type: string
               served:
                 description: |-

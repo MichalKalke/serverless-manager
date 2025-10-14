@@ -1,3 +1,8 @@
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 PROJECT_ROOT = ../..
 include ${PROJECT_ROOT}/hack/help.mk
 
@@ -18,3 +23,7 @@ git-auth-integration: ## Run git authorization integration scenario with kubectl
 .PHONY: serverless-contract-tests
 serverless-contract-tests: ## Run serverless contract tests with kubectl proxy
 	./run-local.sh serverless-contract-tests
+
+.PHONY: cluster-info
+cluster-info: ## Collect logs from the cluster
+	./cluster_info.sh

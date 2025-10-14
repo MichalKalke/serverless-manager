@@ -100,7 +100,7 @@ func getArg(args []string, arg string) string {
 
 func getPackageConfigVolumeMountsForRuntime(rtm serverlessv1alpha2.Runtime) []corev1.VolumeMount {
 	switch rtm {
-	case serverlessv1alpha2.NodeJs20:
+	case serverlessv1alpha2.NodeJs20, serverlessv1alpha2.NodeJs22:
 		return []corev1.VolumeMount{
 			{
 				Name:      "registry-config",
@@ -224,7 +224,7 @@ func equalMetadata(existing appsv1.Deployment, expected appsv1.Deployment) bool 
 }
 
 func equalFnContainer(existing appsv1.Deployment, expected appsv1.Deployment) bool {
-	if !(len(existing.Spec.Template.Spec.Containers) == 1 && len(expected.Spec.Template.Spec.Containers) == 1) {
+	if len(existing.Spec.Template.Spec.Containers) != 1 || len(expected.Spec.Template.Spec.Containers) != 1 {
 		return false
 	}
 	result := existing.Spec.Template.Spec.Containers[0].Image == expected.Spec.Template.Spec.Containers[0].Image

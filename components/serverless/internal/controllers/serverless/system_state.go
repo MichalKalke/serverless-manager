@@ -27,13 +27,14 @@ type SystemState interface{}
 
 // TODO extract interface
 type systemState struct {
-	instance    serverlessv1alpha2.Function
-	fnImage     string               // TODO make sure this is needed
-	configMaps  corev1.ConfigMapList // TODO create issue to refactor this (only 1 config map should be here)
-	deployments appsv1.DeploymentList
-	jobs        batchv1.JobList
-	services    corev1.ServiceList
-	hpas        autoscalingv1.HorizontalPodAutoscalerList
+	instance         serverlessv1alpha2.Function
+	fnImage          string               // TODO make sure this is needed
+	configMaps       corev1.ConfigMapList // TODO create issue to refactor this (only 1 config map should be here)
+	deployments      appsv1.DeploymentList
+	jobs             batchv1.JobList
+	services         corev1.ServiceList
+	hpas             autoscalingv1.HorizontalPodAutoscalerList
+	runtimeBaseImage string
 }
 
 var _ SystemState = systemState{}
@@ -94,11 +95,12 @@ func (s *systemState) inlineFnSrcChanged(dockerPullAddress string, runtimeBase s
 		return false
 	}
 
-	return !(len(s.configMaps.Items) == 1 &&
+	equal := len(s.configMaps.Items) == 1 &&
 		s.instance.Spec.Source.Inline.Source == s.configMaps.Items[0].Data[FunctionSourceKey] &&
 		rtm.SanitizeDependencies(s.instance.Spec.Source.Inline.Dependencies) == s.configMaps.Items[0].Data[FunctionDepsKey] &&
 		configurationStatus == corev1.ConditionTrue &&
-		mapsEqual(s.configMaps.Items[0].Labels, fnLabels))
+		mapsEqual(s.configMaps.Items[0].Labels, fnLabels)
+	return !equal
 }
 
 func (s *systemState) buildConfigMap() corev1.ConfigMap {
@@ -225,9 +227,19 @@ func (s *systemState) buildJobJob(templateSpec corev1.PodSpec) batchv1.Job {
 
 func (s *systemState) buildGitJobRepoFetcherContainer(gitOptions git.Options, cfg cfg) corev1.Container {
 	return corev1.Container{
-		Name:            "repo-fetcher",
-		Image:           cfg.fn.Build.RepoFetcherImage,
-		Env:             buildRepoFetcherEnvVars(&s.instance, gitOptions),
+		Name:  "repo-fetcher",
+		Image: cfg.fn.Build.RepoFetcherImage,
+		Env:   buildRepoFetcherEnvVars(&s.instance, gitOptions),
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("200m"),
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+			},
+		},
 		ImagePullPolicy: corev1.PullAlways,
 		VolumeMounts: []corev1.VolumeMount{
 			{
@@ -240,7 +252,7 @@ func (s *systemState) buildGitJobRepoFetcherContainer(gitOptions git.Options, cf
 }
 
 func (s *systemState) buildJobExecutorContainer(cfg cfg, volumeMounts []corev1.VolumeMount) corev1.Container {
-	imageName := s.buildImageAddress(cfg.docker.PushAddress, cfg.runtimeBaseImage)
+	imageName := s.buildImageAddress(cfg.docker.PushAddress, s.runtimeBaseImage)
 	args := append(cfg.fn.Build.ExecutorArgs,
 		fmt.Sprintf("%s=%s", destinationArg, imageName),
 		fmt.Sprintf("--context=dir://%s", workspaceMountPath))
@@ -386,25 +398,28 @@ func (s *systemState) podAnnotations() map[string]string {
 	if s.instance.Spec.Annotations != nil {
 		result = labels.Merge(s.instance.Spec.Annotations, result)
 	}
-	result = labels.Merge(s.specialDeploymentAnnotations(), result)
+
+	current := s.currentAnnotations()
+	// TODO: This is a temporary solution to delete istio native sidecar annotations from Functions pods, unless its explicitely desired in function spec; see: https://github.com/kyma-project/serverless/issues/1837.
+	annotation := "sidecar.istio.io/nativeSidecar"
+	_, ok := s.instance.Spec.Annotations[annotation]
+	if !ok {
+		delete(current, annotation)
+	}
+
+	// merge old and new annotations to allow other components to annotate functions deployment
+	// for example in case when someone use `kubectl rollout restart` on it
+	result = labels.Merge(current, result)
 	return result
 }
 
-func (s *systemState) specialDeploymentAnnotations() map[string]string {
+func (s *systemState) currentAnnotations() map[string]string {
 	deployments := s.deployments.Items
 	if len(deployments) == 0 {
 		return map[string]string{}
 	}
-	deploymentAnnotations := deployments[0].Spec.Template.GetAnnotations()
-	specialDeploymentAnnotations := map[string]string{}
-	for _, k := range []string{
-		"kubectl.kubernetes.io/restartedAt",
-	} {
-		if v, found := deploymentAnnotations[k]; found {
-			specialDeploymentAnnotations[k] = v
-		}
-	}
-	return specialDeploymentAnnotations
+
+	return deployments[0].Spec.Template.GetAnnotations()
 }
 
 type buildDeploymentArgs struct {
@@ -415,7 +430,7 @@ type buildDeploymentArgs struct {
 }
 
 func (s *systemState) buildDeployment(args buildDeploymentArgs, cfg cfg) appsv1.Deployment {
-	imageName := s.buildImageAddress(args.DockerPullAddress, cfg.runtimeBaseImage)
+	imageName := s.buildImageAddress(args.DockerPullAddress, s.runtimeBaseImage)
 
 	const volumeName = "tmp-dir"
 	emptyDirVolumeSize := resource.MustParse("100Mi")

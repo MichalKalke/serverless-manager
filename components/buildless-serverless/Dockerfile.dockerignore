@@ -1,0 +1,7 @@
+# Ignore all
+**
+# Allow
+!components/buildless-serverless
+!components/runtimes
+!go.sum
+!go.mod

@@ -23,7 +23,7 @@ Follow these steps:
     ```bash
     export NAME={FUNCTION_NAME}
     export NAMESPACE={FUNCTION_NAMESPACE}
-    export RUNTIME_IMAGE={RUNTIME_IMAGE_WITH_TAG}
+    export RUNTIME_IMAGE_URL={RUNTIME_IMAGE_URL} # image pull URL; for example {dockeruser}/foo:0.1.0
     ```
 
 3. Create your local development workspace using the built image:
@@ -31,19 +31,22 @@ Follow these steps:
     ```bash
     mkdir {FOLDER_NAME}
     cd {FOLDER_NAME}
-    kyma init function --name $NAME --namespace $NAMESPACE --runtime-image-override $RUNTIME_IMAGE --runtime python312
+    kyma function init python
     ```
 
 4. Deploy your Function:
 
     ```bash
-    kyma apply function
+    kyma function create python $NAME \
+      --namespace $NAMESPACE --runtime python312 \
+      --runtime-image-override $RUNTIME_IMAGE_URL \
+      --source handler.py --dependencies requirements.txt
     ```
 
 5. Verify whether your Function is running:
 
     ```bash
-    kubectl get functions $NAME -n $NAMESPACE
+    kyma function get $NAME --namespace $NAMESPACE
     ```
 
 #### **kubectl**
@@ -53,7 +56,7 @@ Follow these steps:
     ```bash
     export NAME={FUNCTION_NAME}
     export NAMESPACE={FUNCTION_NAMESPACE}
-    export RUNTIME_IMAGE={RUNTIME_IMAGE_WITH_TAG}
+    export RUNTIME_IMAGE_URL={RUNTIME_IMAGE_URL} # image pull URL; for example {dockeruser}/foo:0.1.0
     ```
 
 3. Create a Function CR that specifies the Function's logic:
@@ -67,15 +70,12 @@ Follow these steps:
      namespace: $NAMESPACE
    spec:
      runtime: python312
-     runtimeImageOverride: $RUNTIME_IMAGE
+     runtimeImageOverride: $RUNTIME_IMAGE_URL
      source:
        inline:
          source: |
-           module.exports = {
-             main: function(event, context) {
-               return 'Hello World!'
-             }
-           }
+           def main(event, context):
+             return "hello world"
    EOF
    ```
 

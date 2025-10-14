@@ -111,16 +111,12 @@ The `event` object is extended by methods making some operations easier. You can
 | **setResponseHeader** | key, value | Sets a header to the `response` object based on the given key and value |
 | **setResponseContentType** | type | Sets the `ContentType` header to the `response` object based on the given type |
 | **setResponseStatus** | status | Sets the `response` status based on the given status |
-| **publishCloudEvent** | event | **Deprecated: use `emitCloudEvent` instead.** Publishes a CloudEvent on the publisher service based on the given CloudEvent object |
-| **buildResponseCloudEvent** | id, type, data | **Deprecated: use `emitCloudEvent` instead.** Builds a CloudEvent object based on the `request` CloudEvent object and the given arguments |
 | **emitCloudEvent** | type, source, data, optionalCloudEventAttribute | Builds a CloudEvent based on the arguments and emits it on the eventing publisher service. You can pass any additional [cloudevent attributes](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md#2-attributes) as properties of the last optional argument `optionalCloudEventAttribute` |
 
 #### **Python**
 
 | Method name | Arguments | Description |
-|----------|-----------|-------------|
-| **publishCloudEvent** | event | Publishes a CloudEvent on the publisher service based on the given CloudEvent object |
-| **buildResponseCloudEvent** | id, type, data | Builds a CloudEvent object based on the `request` CloudEvent object and the given arguments |
+| **emitCloudEvent** | type, source, data, optionalCloudEventAttribute | Builds a CloudEvent based on the arguments and emits it on the eventing publisher service. You must pass [`datacontenttype`](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md#2-attributes) as properties of the last optional argument `optionalCloudEventAttribute` |
 
 <!-- tabs:end -->
 
@@ -147,7 +143,7 @@ See the detailed descriptions of these fields:
 | **function-name** | Name of the invoked Function                                                                                                               |
 | **timeout** | Time, in seconds, after which the system cancels the request to invoke the Function                                                        |
 | **runtime** | Environment used to run the Function. You can use `nodejs20` or `python312`. |
-| **memory-limit** | Maximum amount of memory assigned to run a Function                                                                                        |
+| **memory-limit** | Deprecated: Maximum amount of memory assigned to run a Function                                                                                        |
 
 ## HTTP Requests
 
