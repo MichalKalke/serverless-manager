@@ -59,7 +59,7 @@ func VerifyStuck(utils *utils.TestUtils) error {
 }
 
 func VerifyDeletionStuck(utils *utils.TestUtils) error {
-	serverless, err := getServerless(utils, utils.SecondServerlessName)
+	serverless, err := getServerless(utils, utils.ServerlessName)
 	if err != nil {
 		return err
 	}
