@@ -19,6 +19,6 @@ jobs:
           make -C components/operator deploy
           make -C tests/operator test
         env:
-          IMG: "europe-docker.pkg.dev/kyma-project/prod/serverless-operator:f72a8f437731c672d2bf2e6b57b25ae5d3050e02"
+          IMG: "europe-docker.pkg.dev/kyma-project/prod/serverless-operator:aa4277f136720b7a1f57f0f033eb4d6d101d515b"
       - if: ${{ always() }}
         uses: ./.github/actions/collect-cluster-info
