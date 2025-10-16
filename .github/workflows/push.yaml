@@ -4,7 +4,6 @@ on:
   push:
     branches: ["main", "release-*"]
 
-
 jobs:
   operator-integration-test:
     runs-on: ubuntu-latest
